@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-yellow: #ccff00;
+  --color-emerald-green: #00ff88;
+  --color-zinc-950: #09090b;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-zinc-950 text-white antialiased overflow-x-hidden;
+    min-height: 100dvh;
+    margin: 0;
+    font-family: 'Geist', 'Satoshi', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: rgba(25, 25, 30, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .diffused-glow {
+    box-shadow: 0 20px 80px -20px rgba(0, 255, 136, 0.2);
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-neon-yellow to-emerald-green;
+  }
+}
