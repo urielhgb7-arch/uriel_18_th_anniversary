@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X } from 'lucide-react';
-import content from '../content.json';
+import content from '../../content.json';
 
 export default function MiniEnigmas() {
   const { enigmas } = content;

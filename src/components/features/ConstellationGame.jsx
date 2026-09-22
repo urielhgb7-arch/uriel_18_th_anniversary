@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, ChevronDown } from 'lucide-react';
 import { toPng } from 'html-to-image';
-import content from '../content.json';
+import content from '../../content.json';
 
 export default function ConstellationGame() {
   const [discovered, setDiscovered] = useState(0); // Index of current star

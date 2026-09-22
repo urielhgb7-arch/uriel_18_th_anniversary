@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { Activity, Film, Music, Briefcase, PenTool, Cpu } from 'lucide-react';
-import content from '../content.json';
+import content from '../../content.json';
 
 const IconMap = {
   activity: Activity,
