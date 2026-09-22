@@ -1,168 +1,245 @@
-import { useEffect, useState } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { MapPin, Phone, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 
-export default function IncomingCall({ onSelectPath }) {
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+// ─── Starfield Canvas ─────────────────────────────────────────────────────────
+function StarfieldCanvas() {
+  const canvasRef = useRef(null);
 
-  // Effet d'inclinaison 3D (souris + gyroscope)
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 20;
-      const y = (e.clientY / window.innerHeight - 0.5) * -20;
-      setTilt({ x: y, y: x });
-    };
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let raf;
 
-    const handleDeviceOrientation = (e) => {
-      if (e.beta && e.gamma) {
-        const x = Math.min(Math.max(e.beta - 45, -20), 20);
-        const y = Math.min(Math.max(e.gamma, -20), 20);
-        setTilt({ x: -x, y });
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const stars = Array.from({ length: 180 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.4 + 0.3,
+      a: Math.random(),
+      da: (Math.random() - 0.5) * 0.004,
+      vx: (Math.random() - 0.5) * 0.08,
+      vy: (Math.random() - 0.5) * 0.08,
+    }));
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        s.x += s.vx;
+        s.y += s.vy;
+        s.a += s.da;
+        if (s.a <= 0 || s.a >= 1) s.da *= -1;
+        if (s.x < 0) s.x = canvas.width;
+        if (s.x > canvas.width) s.x = 0;
+        if (s.y < 0) s.y = canvas.height;
+        if (s.y > canvas.height) s.y = 0;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${Math.max(0, Math.min(1, s.a))})`;
+        ctx.fill();
       }
+      raf = requestAnimationFrame(draw);
     };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('deviceorientation', handleDeviceOrientation);
-
-    if (navigator.vibrate) {
-      navigator.vibrate([200, 100, 200]);
-    }
-
+    draw();
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('deviceorientation', handleDeviceOrientation);
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
     };
   }, []);
 
   return (
-    <div className="fixed inset-0 z-40 bg-zinc-900 overflow-hidden flex flex-col items-center justify-between py-12 px-6 font-inter select-none">
-      {/* Fond flouté façon iOS */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#120b2e] to-black opacity-80" />
-        <div className="absolute top-1/4 left-1/4 w-[60vw] h-[60vw] bg-purple-600/30 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-[70vw] h-[70vw] bg-emerald-500/20 rounded-full blur-[120px]" style={{ animationDuration: '4s' }} />
-        {/* iOS Glass overlay */}
-        <div className="absolute inset-0 backdrop-blur-3xl bg-black/10" />
-      </div>
-
-      {/* Header : Titre de l'appel iOS */}
-      <div className="z-10 flex flex-col items-center mt-12 w-full">
-        <motion.p 
-          className="text-white/70 text-[17px] tracking-wide mb-1 font-medium"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          mobile
-        </motion.p>
-        <motion.h1 
-          className="text-5xl font-light text-white tracking-tight"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          Uriel
-        </motion.h1>
-      </div>
-
-      {/* Avatar Central Antigravity */}
-      <motion.div 
-        className="z-10 relative flex items-center justify-center mt-8 mb-auto"
-        style={{ perspective: 1000 }}
-      >
-        <motion.div 
-          className="w-44 h-44 rounded-full bg-white/5 border border-white/20 backdrop-blur-2xl flex items-center justify-center shadow-2xl"
-          animate={{ 
-            rotateX: tilt.x,
-            rotateY: tilt.y,
-            boxShadow: `${-tilt.y}px ${-tilt.x}px 40px rgba(107,33,168,0.3)`
-          }}
-          transition={{ type: 'spring', stiffness: 100, damping: 30 }}
-        >
-          <div className="w-36 h-36 rounded-full bg-gradient-to-br from-purple-600 to-emerald-500 flex items-center justify-center shadow-inner">
-            <span className="text-white text-6xl font-light">U</span>
-          </div>
-        </motion.div>
-        
-        {/* Cercles de pulsation externes (Ringing effect) */}
-        <div className="absolute inset-[-20px] rounded-full border border-white/20 animate-[ping_3s_ease-out_infinite]" />
-        <div className="absolute inset-[-40px] rounded-full border border-white/10 animate-[ping_3s_ease-out_infinite]" style={{ animationDelay: '1s' }} />
-      </motion.div>
-
-      {/* Actions (Swipes iOS Style) */}
-      <div className="z-10 w-full flex flex-col gap-5 mb-10 max-w-sm mx-auto">
-        {/* Swipe Right : Constellation (Answer call style) */}
-        <IosSwipeButton 
-          icon={<Phone className="text-emerald-500" size={24} fill="currentColor" />}
-          label="glisser pour me découvrir"
-          color="bg-white/10"
-          buttonColor="bg-white"
-          onUnlock={() => onSelectPath('constellation')}
-        />
-
-        {/* Swipe Right : Lieu */}
-        <IosSwipeButton 
-          icon={<MapPin className="text-blue-500" size={24} fill="currentColor" />}
-          label="glisser pour le lieu"
-          color="bg-white/10"
-          buttonColor="bg-white"
-          onUnlock={() => onSelectPath('map')}
-        />
-      </div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+    />
   );
 }
 
-// Composant iOS exact
-function IosSwipeButton({ icon, label, color, buttonColor, onUnlock }) {
+function RippleRing({ delay = 0 }) {
+  return (
+    <motion.div
+      className="absolute inset-0 rounded-full border border-white/20"
+      initial={{ scale: 1, opacity: 0.6 }}
+      animate={{ scale: 2.2, opacity: 0 }}
+      transition={{ duration: 2.4, repeat: Infinity, delay, ease: 'easeOut' }}
+    />
+  );
+}
+
+function SwipeToAnswer({ label, onUnlock }) {
   const x = useMotionValue(0);
-  const opacity = useTransform(x, [0, 150], [1, 0]);
-  
-  const handleDragEnd = (event, info) => {
-    const threshold = 180;
-    if (info.offset.x > threshold) {
-      onUnlock();
+  const [trackWidth, setTrackWidth] = useState(300);
+  const trackRef = useRef(null);
+
+  useEffect(() => {
+    if (trackRef.current) setTrackWidth(trackRef.current.offsetWidth);
+  }, []);
+
+  const buttonMax = trackWidth - 72;
+  const textOpacity = useTransform(x, [0, buttonMax * 0.5], [1, 0]);
+  const arrowOpacity = useTransform(x, [0, buttonMax * 0.3], [1, 0]);
+  const trackGlow = useTransform(x, [0, buttonMax], ['rgba(255,255,255,0)', 'rgba(52,199,89,0.3)']);
+  const buttonBg = useTransform(x, [0, buttonMax * 0.8], ['rgba(255,255,255,1)', 'rgba(52,199,89,1)']);
+
+  const handleDragEnd = (_, info) => {
+    if (info.offset.x > buttonMax * 0.75) {
+      animate(x, buttonMax, { duration: 0.2 });
+      setTimeout(onUnlock, 300);
+    } else {
+      animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
     }
   };
 
   return (
-    <div className={`relative w-full h-[76px] rounded-full backdrop-blur-xl flex items-center px-2 ${color} border border-white/10`}>
-      {/* Texte indicatif iOS style */}
-      <motion.div 
-        className="absolute w-full text-center pointer-events-none"
-        style={{ opacity }}
+    <div
+      ref={trackRef}
+      className="relative w-full h-[76px] rounded-full flex items-center px-[6px]"
+      style={{
+        background: 'rgba(80,80,80,0.45)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.12)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+      }}
+    >
+      <motion.div className="absolute inset-0 rounded-full" style={{ background: trackGlow }} />
+      <motion.span
+        className="absolute w-full text-center pointer-events-none text-base font-medium tracking-wide"
+        style={{ opacity: textOpacity, color: 'rgba(255,255,255,0.72)' }}
       >
-        <span className="text-white/80 text-[17px] font-medium tracking-wide shimmer-text">{label}</span>
-      </motion.div>
-
-      {/* Bouton draggable */}
+        {label}
+      </motion.span>
       <motion.div
-        className={`relative z-10 w-[60px] h-[60px] rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-[0_4px_12px_rgba(0,0,0,0.1)] ${buttonColor}`}
-        style={{ x }}
+        className="relative z-10 w-[64px] h-[64px] rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-[0_2px_12px_rgba(0,0,0,0.3)]"
+        style={{ x, background: buttonBg }}
         drag="x"
-        dragConstraints={{ left: 0, right: 260 }} // À ajuster selon la largeur d'écran
-        dragElastic={0.05}
-        dragSnapToOrigin
+        dragConstraints={{ left: 0, right: buttonMax }}
+        dragElastic={0.02}
         onDragEnd={handleDragEnd}
       >
-        {icon}
+        <motion.svg style={{ opacity: arrowOpacity }} width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18l6-6-6-6" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </motion.svg>
       </motion.div>
+    </div>
+  );
+}
 
-      {/* Shimmer effect style */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .shimmer-text {
-          background: linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.4) 100%);
-          background-size: 200% auto;
-          color: transparent;
-          -webkit-background-clip: text;
-          background-clip: text;
-          animation: shimmer 3s linear infinite;
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-      `}} />
+function SecondaryBtn({ icon, label }) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div
+        className="w-[64px] h-[64px] rounded-full flex items-center justify-center"
+        style={{
+          background: 'rgba(80,80,80,0.40)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.10)',
+        }}
+      >
+        {icon}
+      </div>
+      <span className="text-white/75 text-[13px]">{label}</span>
+    </div>
+  );
+}
+
+export default function IncomingCall({ onSelectPath }) {
+  useEffect(() => {
+    if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-40 overflow-hidden flex flex-col select-none"
+      style={{
+        background: 'linear-gradient(180deg, #3a3d42 0%, #2c2f33 35%, #1c1e21 65%, #111214 100%)',
+      }}
+    >
+      <StarfieldCanvas />
+      <div
+        className="absolute inset-0 pointer-events-none z-[1]"
+        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)' }}
+      />
+
+      {/* Header */}
+      <div className="relative z-10 flex flex-col items-center pt-20">
+        <motion.div
+          className="flex items-center gap-1.5 mb-3"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="20" fill="#25D366" />
+            <path d="M28.7 11.3A11.9 11.9 0 0 0 20 8C13.4 8 8 13.4 8 20c0 2.1.5 4.1 1.5 5.9L8 32l6.3-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.3-8.5zm-8.7 18.4c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.3-.4a9.9 9.9 0 0 1-1.5-5.3c0-5.5 4.5-10 10-10 2.7 0 5.2 1 7 2.9 1.9 1.9 2.9 4.3 2.9 7 0 5.5-4.5 10-10 10zm5.5-7.5c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.1-.7.1-.2.3-.8.9-1 1.1-.2.2-.4.2-.7.1-1-.5-2-1-2.7-2-.6-.7-1.3-1.6-1.4-1.9-.1-.3 0-.5.1-.7l.5-.5c.1-.2.2-.4.3-.6.1-.2 0-.4 0-.6-.1-.2-.7-1.8-.9-2.4-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.7s1.1 3.1 1.3 3.3c.2.2 2.2 3.4 5.3 4.7.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.2-.6-.4z" fill="white" />
+          </svg>
+          <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: '17px' }}>Audio WhatsApp...</span>
+        </motion.div>
+
+        <motion.h1
+          style={{ fontSize: 'clamp(2rem, 7vw, 2.8rem)', fontWeight: '300', color: '#fff', letterSpacing: '-0.02em' }}
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          Associé Uriel 😊✨
+        </motion.h1>
+      </div>
+
+      {/* Center ripple */}
+      <div className="relative z-10 flex-1 flex items-center justify-center">
+        <motion.div
+          className="relative w-20 h-20"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+        >
+          <RippleRing delay={0} />
+          <RippleRing delay={0.8} />
+          <RippleRing delay={1.6} />
+          <div className="w-full h-full rounded-full" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)' }} />
+        </motion.div>
+      </div>
+
+      {/* Bottom */}
+      <motion.div
+        className="relative z-10 flex flex-col items-center gap-8 pb-14 px-6"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="flex w-full max-w-xs justify-between px-4">
+          <SecondaryBtn
+            label="Message"
+            icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" />
+              </svg>
+            }
+          />
+          <SecondaryBtn
+            label="Rappeler plus tard"
+            icon={
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="1.8" />
+                <polyline points="12 7 12 12 15 15" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            }
+          />
+        </div>
+
+        <div className="w-full max-w-sm flex flex-col gap-4">
+          <SwipeToAnswer label="Glisser pour le lieu" onUnlock={() => onSelectPath('map')} />
+          <SwipeToAnswer label="Glisser pour me découvrir" onUnlock={() => onSelectPath('constellation')} />
+        </div>
+      </motion.div>
     </div>
   );
 }
