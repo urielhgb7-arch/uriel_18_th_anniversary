@@ -1,0 +1,35 @@
+﻿{
+  "event": {
+    "title": "Uriel 18th Anniversary",
+    "date": "2026-10-15",
+    "location": {
+      "lat": 48.8584,
+      "lng": 2.2945,
+      "name": "Lieu Secret, Paris"
+    }
+  },
+  "colors": {
+    "navy": "#0a0f1c",
+    "violet": "#4a00e0",
+    "gold": "#ffd700",
+    "emerald": "#10b981",
+    "yellow": "#facc15"
+  },
+  "whatsapp": {
+    "number": "+22901449902086",
+    "message": "Salut Uriel ! Je suis prêt(e) à vivre cette expérience pour ton 18ème anniversaire ! 🚀"
+  },
+  "gpsSteps": [
+    "Initialisation de la localisation spatiale...",
+    "Calcul de l'itinéraire vers l'événement VIP...",
+    "Préparez-vous pour une soirée inoubliable."
+  ],
+  "constellationTraits": [
+    { "id": 1, "title": "Visionnaire", "desc": "Toujours un coup d'avance sur demain.", "x": 10, "y": 20 },
+    { "id": 2, "title": "Créatif", "desc": "L'art de transformer le vide en or.", "x": 40, "y": 10 },
+    { "id": 3, "title": "Déterminé", "desc": "Aucun obstacle n'est insurmontable.", "x": 80, "y": 30 },
+    { "id": 4, "title": "Audacieux", "desc": "Oser là où les autres hésitent.", "x": 70, "y": 70 },
+    { "id": 5, "title": "Loyal", "desc": "Un pilier pour ceux qui comptent.", "x": 30, "y": 80 },
+    { "id": 6, "title": "Épicurien", "desc": "Le goût du vrai et du raffiné.", "x": 15, "y": 55 }
+  ]
+}
