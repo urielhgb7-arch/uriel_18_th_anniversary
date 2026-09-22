@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, Map, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import LoadingScreen from './components/features/LoadingScreen';
 import IncomingCall from './components/features/IncomingCall';
 import MapItinerary from './components/features/MapItinerary';
-import ConstellationGame from './components/features/ConstellationGame';
+import ExperienceScroll from './components/features/ExperienceScroll';
 import './index.css';
 
 export default function App() {
-  const [stage, setStage] = useState('LOADING'); // LOADING, INCOMING_CALL, MAP, CONSTELLATION
+  const [stage, setStage] = useState('LOADING'); // LOADING, INCOMING_CALL, MAP, EXPERIENCE
   const [isMuted, setIsMuted] = useState(true);
 
   // Gérer le son persistant
@@ -33,15 +33,30 @@ export default function App() {
   };
 
   return (
-    <div className="relative w-full h-[100dvh] bg-[#0a0f1c] overflow-hidden">
+    <div className="relative w-full h-[100dvh] bg-[#120b2e] overflow-hidden">
       
       {/* Bouton Audio Global */}
       <button 
         onClick={toggleMute}
-        className="fixed top-6 right-6 z-50 w-10 h-10 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white"
+        className="fixed top-6 right-6 z-50 w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center text-white shadow-lg transition-transform active:scale-95"
       >
-        {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
       </button>
+
+      {/* Icône flottante pour basculer (affichée uniquement hors appel/loading) */}
+      <AnimatePresence>
+        {(stage === 'MAP' || stage === 'EXPERIENCE') && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={() => setStage(stage === 'MAP' ? 'EXPERIENCE' : 'MAP')}
+            className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-r from-purple-600 to-emerald-500 rounded-full flex items-center justify-center text-white shadow-[0_10px_30px_rgba(107,33,168,0.5)] transition-transform hover:scale-105 active:scale-95"
+          >
+            {stage === 'MAP' ? <Sparkles size={24} /> : <Map size={24} />}
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Machine à états des pages */}
       <AnimatePresence mode="wait">
@@ -54,19 +69,19 @@ export default function App() {
 
         {stage === 'INCOMING_CALL' && (
           <motion.div key="call" variants={pageVariants} initial="initial" animate="in" exit="out" transition={{ duration: 1 }} className="w-full h-full">
-            <IncomingCall onSelectPath={(path) => setStage(path === 'map' ? 'MAP' : 'CONSTELLATION')} />
+            <IncomingCall onSelectPath={(path) => setStage(path === 'map' ? 'MAP' : 'EXPERIENCE')} />
           </motion.div>
         )}
 
         {stage === 'MAP' && (
           <motion.div key="map" variants={pageVariants} initial="initial" animate="in" exit="out" className="w-full h-full">
-            <MapItinerary onSwitchToConstellation={() => setStage('CONSTELLATION')} />
+            <MapItinerary />
           </motion.div>
         )}
 
-        {stage === 'CONSTELLATION' && (
-          <motion.div key="constellation" variants={pageVariants} initial="initial" animate="in" exit="out" className="w-full h-full">
-            <ConstellationGame onSwitchToMap={() => setStage('MAP')} />
+        {stage === 'EXPERIENCE' && (
+          <motion.div key="experience" variants={pageVariants} initial="initial" animate="in" exit="out" className="w-full h-[100dvh]">
+            <ExperienceScroll />
           </motion.div>
         )}
 

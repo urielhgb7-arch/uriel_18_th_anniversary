@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Navigation } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import * as L from 'leaflet';
-import content from '../content.json';
+import content from '../../content.json';
 
 export default function MapItinerary({ onSwitchToConstellation }) {
   const mapRef = useRef(null);

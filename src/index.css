@@ -1,37 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-neon-yellow: #ccff00;
-  --color-emerald-green: #00ff88;
-  --color-zinc-950: #09090b;
+  --color-deep-purple: #120b2e;
+  --color-violet-accent: #6b21a8;
+  --color-emerald-accent: #10b981;
+  --color-gold-accent: #ffd700;
+  --font-inter: 'Inter', sans-serif;
+  --font-space: 'Space Grotesk', sans-serif;
 }
 
 @layer base {
   :root {
     color-scheme: dark;
+    --bg-base: hsl(260, 60%, 8%); /* Deep Purple Base */
+    --text-hero: clamp(3rem, 8vw + 1rem, 6rem);
+    --text-h1: clamp(2rem, 5vw, 4rem);
+    --text-body: clamp(1rem, 1.5vw, 1.125rem);
   }
   body {
-    @apply bg-zinc-950 text-white antialiased overflow-x-hidden;
+    @apply text-white antialiased overflow-x-hidden;
+    background-color: var(--bg-base);
     min-height: 100dvh;
     margin: 0;
-    font-family: 'Geist', 'Satoshi', system-ui, sans-serif;
+    font-family: var(--font-inter);
+    /* Noise texture */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-space);
+    letter-spacing: -0.03em;
   }
 }
 
 @layer utilities {
   .glass-panel {
-    background: rgba(25, 25, 30, 0.4);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(30, 20, 50, 0.3);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
   .diffused-glow {
-    box-shadow: 0 20px 80px -20px rgba(0, 255, 136, 0.2);
+    box-shadow: 0 20px 80px -20px rgba(107, 33, 168, 0.4);
   }
   
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-neon-yellow to-emerald-green;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-emerald-400;
+  }
+
+  .title-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/40;
   }
 }
