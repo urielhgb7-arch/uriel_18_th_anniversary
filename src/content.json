@@ -1,19 +1,22 @@
 {
   "event": {
-    "title": "Uriel 18th Anniversary",
+    "title": "Uriel — 18 ans",
     "date": "2026-10-15",
+    "caller": {
+      "name": "Uriel",
+      "label": "Appel vidéo FaceTime",
+      "initials": "U"
+    },
     "location": {
-      "lat": 48.8584,
-      "lng": 2.2945,
-      "name": "Lieu Secret, Paris"
+      "lat": 6.3492895978751855,
+      "lng": 2.3320373663562055,
+      "name": "Cotonou",
+      "venue": "Lieu Secret"
     }
   },
-  "colors": {
-    "tchalla": "#1B0B2E",
-    "vibranium": "#8B5CF6",
-    "infinityGold": "#D4AF37",
-    "starkBlue": "#0EA5E9",
-    "doomGreen": "#10B981"
+  "whatsapp": {
+    "number": "22901449902086",
+    "message": "Salut Uriel ! Je suis prêt(e) à vivre cette expérience pour ton 18ème anniversaire ! 🚀"
   },
   "infinityStones": [
     { "id": "space", "color": "#3B82F6", "name": "Espace" },
@@ -23,40 +26,44 @@
     { "id": "time", "color": "#22C55E", "name": "Temps" },
     { "id": "soul", "color": "#F97316", "name": "Âme" }
   ],
-  "whatsapp": {
-    "number": "+22901449902086",
-    "message": "Salut Uriel ! Je suis prêt(e) à vivre cette expérience pour ton 18ème anniversaire ! 🚀"
-  },
-  "gpsSteps": [
-    "Initialisation de la localisation spatiale...",
-    "Calcul de l'itinéraire vers l'événement VIP...",
-    "Préparez-vous pour une soirée inoubliable."
-  ],
   "constellationTraits": [
-    { "id": 1, "title": "Ambition dévorante", "desc": "Viser toujours plus loin, au-delà des limites.", "x": 10, "y": 20 },
-    { "id": 2, "title": "Écoute attentive", "desc": "Comprendre l'autre avant même qu'il ne parle.", "x": 15, "y": 60 },
-    { "id": 3, "title": "Créativité sans limite", "desc": "L'art de transformer le vide en or.", "x": 25, "y": 25 },
-    { "id": 4, "title": "Calme olympien", "desc": "Garder la maîtrise quand tout s'agite.", "x": 35, "y": 65 },
-    { "id": 5, "title": "Franchise brutale", "desc": "La vérité, pure et sans détour.", "x": 50, "y": 25 },
-    { "id": 6, "title": "Loyauté sans faille", "desc": "Un pilier inébranlable pour ceux qui comptent.", "x": 65, "y": 70 },
-    { "id": 7, "title": "Esprit d'analyse", "desc": "Voir les détails que les autres ignorent.", "x": 75, "y": 20 },
-    { "id": 8, "title": "Adaptabilité constante", "desc": "Se fondre et maîtriser chaque nouvel environnement.", "x": 90, "y": 65 }
+    { "id": 1, "title": "Ambition dévorante", "desc": "Viser toujours plus loin, au-delà des limites." },
+    { "id": 2, "title": "Écoute attentive", "desc": "Comprendre l'autre avant même qu'il ne parle." },
+    { "id": 3, "title": "Créativité sans limite", "desc": "L'art de transformer le vide en or." },
+    { "id": 4, "title": "Calme olympien", "desc": "Garder la maîtrise quand tout s'agite." },
+    { "id": 5, "title": "Franchise brutale", "desc": "La vérité, pure et sans détour." },
+    { "id": 6, "title": "Loyauté sans faille", "desc": "Un pilier inébranlable pour ceux qui comptent." }
   ],
   "enigmas": [
-    { "id": 1, "question": "Entre le sport et le design, quel est mon moteur principal ?", "options": ["L'adrénaline du sport", "La créativité du design", "Les deux en parfaite harmonie"], "answer": 2 },
-    { "id": 2, "question": "Quel genre d'Anime me passionne le plus ?", "options": ["Ceux avec de la grande stratégie", "Ceux pleins d'action", "Ceux avec un message profond"], "answer": 0 },
-    { "id": 3, "question": "En musique, quel est mon rythme de prédilection ?", "options": ["Le rythme posé et chill", "Le rythme intense et motivant", "Les mélodies complexes"], "answer": 1 }
+    {
+      "id": 1,
+      "question": "Entre le sport et le design, quel est mon moteur principal ?",
+      "options": ["L'adrénaline du sport", "La créativité du design", "Les deux en parfaite harmonie"],
+      "answerIndex": 2
+    },
+    {
+      "id": 2,
+      "question": "Quel genre d'Anime me passionne le plus ?",
+      "options": ["Ceux avec de la grande stratégie", "Ceux pleins d'action", "Ceux avec un message profond"],
+      "answerIndex": 0
+    },
+    {
+      "id": 3,
+      "question": "En musique, quel est mon rythme de prédilection ?",
+      "options": ["Le rythme posé et chill", "Le rythme intense et motivant", "Les mélodies complexes"],
+      "answerIndex": 1
+    }
   ],
   "passions": [
-    { "id": 1, "name": "Sport", "icon": "⚽" },
-    { "id": 2, "name": "Animes", "icon": "🎬" },
-    { "id": 3, "name": "Musique", "icon": "🎵" },
-    { "id": 4, "name": "Projets", "icon": "🚀" },
-    { "id": 5, "name": "Design", "icon": "🎨" },
-    { "id": 6, "name": "Technologie", "icon": "💻" }
+    { "id": 1, "name": "Sport", "icon": "activity", "desc": "Le terrain, la sueur, le dépassement. Là où le mental se forge." },
+    { "id": 2, "name": "Animes", "icon": "film", "desc": "Des mondes entiers en 24 images par seconde. La stratégie avant la force." },
+    { "id": 3, "name": "Musique", "icon": "music", "desc": "Le carburant. Un rythme intense, et tout devient possible." },
+    { "id": 4, "name": "Projets", "icon": "rocket", "desc": "Construire ce qui n'existe pas encore. Toujours un chantier en cours." },
+    { "id": 5, "name": "Design", "icon": "pen-tool", "desc": "Rendre beau ce qui doit être utile. Le détail qui change tout." },
+    { "id": 6, "name": "Technologie", "icon": "cpu", "desc": "Comprendre la machine pour lui faire dire des choses nouvelles." }
   ],
   "finalMessage": {
     "title": "Bienvenue dans mon Univers.",
-    "subtitle": "Profitez bien de cette expérience conçue sur mesure. L'aventure ne fait que commencer."
+    "subtitle": "La réalité a été réécrite. La suite de l'histoire t'appartient."
   }
 }

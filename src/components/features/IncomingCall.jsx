@@ -1,202 +1,233 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import content from '../../content.json';
+import { startRingtone, stopRingtone, haptic, HAPTIC, playClick } from '../../lib/audio';
 
-// ── Background Hex Grid / Wakanda Vibe ──────────────────────────────────────
-function HexGridBackground() {
+/**
+ * Acte I — Appel entrant iOS.
+ *
+ * L'illusion tient à trois détails que les imitations ratent d'habitude :
+ *  - la typo système réelle (SF Pro sur iPhone) via --font-ios, pas une webfont ;
+ *  - le nom en poids 300 et non en gras, comme le vrai écran d'appel ;
+ *  - "Refuser" et "Accepter" en 400, taille 17px, à 96px d'écart exact.
+ *
+ * Le bouton rouge est présent et fonctionnel : un écran d'appel sans refus se
+ * repère immédiatement. Refuser rappelle simplement l'appel quelques secondes
+ * plus tard — on ne peut pas laisser un cul-de-sac sur la porte d'entrée.
+ */
+
+const AcceptIcon = () => (
+  <svg width="33" height="33" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+    <path d="M6.6 10.8c1.5 2.9 3.7 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1l-2.2 2.3Z" />
+  </svg>
+);
+
+/** Même glyphe, pivoté : exactement ce que fait iOS pour le bouton refuser. */
+const DeclineIcon = () => (
+  <svg
+    width="33"
+    height="33"
+    viewBox="0 0 24 24"
+    fill="white"
+    style={{ transform: 'rotate(135deg)' }}
+    aria-hidden="true"
+  >
+    <path d="M6.6 10.8c1.5 2.9 3.7 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1l-2.2 2.3Z" />
+  </svg>
+);
+
+const RemindIcon = () => (
+  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" aria-hidden="true">
+    <circle cx="12" cy="13" r="8" />
+    <path d="M12 9.5V13l2.5 1.6M5 4.2 7 2.4M19 4.2 17 2.4" strokeLinecap="round" />
+  </svg>
+);
+
+const MessageIcon = () => (
+  <svg width="21" height="21" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+    <path d="M12 3C6.9 3 2.8 6.4 2.8 10.6c0 2.4 1.3 4.5 3.4 5.9-.2 1.5-.9 2.7-1.6 3.4 1.6-.2 3.4-1 4.6-1.9 .9.2 1.8.3 2.8.3 5.1 0 9.2-3.4 9.2-7.7S17.1 3 12 3Z" />
+  </svg>
+);
+
+/** Action secondaire : rond translucide + label 13px, comme iOS. */
+function SecondaryAction({ icon, label, onClick }) {
   return (
-    <div 
-      className="absolute inset-0 z-0 opacity-10 pointer-events-none"
-      style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='69.2820323027551' viewBox='0 0 40 69.2820323027551' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 17.3205081L20 5.77350269 0 17.3205081v23.0940108L20 51.9615242l20-11.5470054V17.3205081zM20 63.5085296L0 51.9615242v-23.0940108L20 17.3205081l20 11.5470054v23.0940108L20 63.5085296z' fill='%238B5CF6' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-        backgroundSize: '40px'
-      }}
-    />
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-[9px] w-[84px] transition-opacity active:opacity-55"
+    >
+      <div className="w-[52px] h-[52px] rounded-full flex items-center justify-center bg-white/[0.18] backdrop-blur-xl">
+        {icon}
+      </div>
+      <span className="text-white/95 text-[13px]" style={{ fontFamily: 'var(--font-ios)' }}>
+        {label}
+      </span>
+    </button>
   );
 }
 
-function RippleRing({ delay = 0, color = 'rgba(139,92,246,0.5)' }) {
+/** Bouton d'appel principal : 76px, le diamètre réel iOS. */
+function CallButton({ variant, label, onClick, pulse = false }) {
+  const isAccept = variant === 'accept';
   return (
-    <motion.div
-      className="absolute inset-0 rounded-full border-2"
-      style={{ borderColor: color }}
-      initial={{ scale: 1, opacity: 0.8 }}
-      animate={{ scale: 2.5, opacity: 0 }}
-      transition={{ duration: 2, repeat: Infinity, delay, ease: 'easeOut' }}
-    />
+    <div className="flex flex-col items-center gap-[11px]">
+      <div className="relative">
+        {/* Halo respirant : attire l'œil sur "Accepter" sans être voyant. */}
+        {pulse && (
+          <motion.span
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{ background: 'var(--color-ios-green)' }}
+            animate={{ scale: [1, 1.5], opacity: [0.4, 0] }}
+            transition={{ duration: 1.9, repeat: Infinity, ease: 'easeOut' }}
+          />
+        )}
+        <motion.button
+          onClick={onClick}
+          aria-label={label}
+          className="relative w-[76px] h-[76px] rounded-full flex items-center justify-center"
+          style={{
+            background: isAccept ? 'var(--color-ios-green)' : 'var(--color-ios-red)',
+            boxShadow: `0 6px 22px ${isAccept ? 'rgba(52,199,89,0.42)' : 'rgba(255,59,48,0.38)'}`,
+          }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: 'spring', stiffness: 520, damping: 26 }}
+        >
+          {isAccept ? <AcceptIcon /> : <DeclineIcon />}
+        </motion.button>
+      </div>
+      <span className="text-white/95 text-[17px]" style={{ fontFamily: 'var(--font-ios)' }}>
+        {label}
+      </span>
+    </div>
   );
 }
 
-function SwipeToUnlock({ label, onUnlock, accentColor = '#8B5CF6' }) {
-  const x = useMotionValue(0);
-  const [trackWidth, setTrackWidth] = useState(300);
-  const trackRef = useRef(null);
+export default function IncomingCall({ onAccept }) {
+  const { caller } = content.event;
+  // Un timer de rappel peut être en vol au démontage : il faut pouvoir l'annuler.
+  const recallTimer = useRef(null);
 
   useEffect(() => {
-    if (trackRef.current) setTrackWidth(trackRef.current.offsetWidth);
+    startRingtone();
+    haptic(HAPTIC.ring);
+    // Relance la vibration en phase avec le cycle de sonnerie (3,2 s).
+    const buzz = setInterval(() => haptic(HAPTIC.ring), 3200);
+
+    return () => {
+      clearInterval(buzz);
+      clearTimeout(recallTimer.current);
+      stopRingtone();
+      haptic(0);
+    };
   }, []);
 
-  const buttonMax = trackWidth - 64;
-  const textOpacity = useTransform(x, [0, buttonMax * 0.5], [1, 0]);
-  const trackGlow = useTransform(x, [0, buttonMax], ['rgba(0,0,0,0)', `rgba(139,92,246,0.3)`]); // using vibranium color
-  const buttonBg = useTransform(x, [0, buttonMax * 0.8], ['rgba(20,10,40,1)', accentColor]);
+  const handleAccept = () => {
+    stopRingtone();
+    haptic(HAPTIC.impact);
+    onAccept();
+  };
 
-  const handleDragEnd = (_, info) => {
-    if (info.offset.x > buttonMax * 0.75) {
-      animate(x, buttonMax, { duration: 0.2 });
-      setTimeout(onUnlock, 300);
-    } else {
-      animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
-    }
+  /**
+   * Refuser coupe la sonnerie puis rappelle. Le bouton doit exister pour que
+   * l'écran soit crédible, mais il ne peut pas être une sortie définitive.
+   */
+  const handleDecline = () => {
+    stopRingtone();
+    haptic(HAPTIC.soft);
+    playClick();
+    recallTimer.current = setTimeout(() => {
+      startRingtone();
+      haptic(HAPTIC.ring);
+    }, 2600);
   };
 
   return (
-    <div
-      ref={trackRef}
-      className="relative w-full h-[64px] rounded-full flex items-center px-1 overflow-hidden"
-      style={{
-        background: 'rgba(20,10,40,0.6)',
-        backdropFilter: 'blur(20px)',
-        border: `1px solid rgba(139,92,246,0.3)`,
-        boxShadow: `inset 0 0 20px rgba(139,92,246,0.1)`,
-      }}
+    <motion.div
+      className="fixed inset-0 z-40 flex flex-col overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.45 }}
     >
-      <motion.div className="absolute inset-0 rounded-full" style={{ background: trackGlow }} />
-      
-      {/* Scan line effect inside track */}
-      <motion.div 
-        className="absolute top-0 bottom-0 w-8 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"
-        animate={{ left: ['-20%', '120%'] }}
-        transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+      {/* Fond très sombre et flou : le rendu d'un appel sans photo de contact. */}
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,#1a1d23 0%,#0d0f13 55%,#07080b 100%)' }} />
+      <div
+        className="absolute inset-0"
+        style={{ background: 'radial-gradient(ellipse at 50% 22%,rgba(120,135,160,0.22),transparent 62%)', filter: 'blur(30px)' }}
       />
 
-      <motion.span
-        className="absolute w-full text-center pointer-events-none text-sm font-medium tracking-[0.15em] uppercase text-[#8B5CF6]"
-        style={{ opacity: textOpacity, fontFamily: "'DM Sans', sans-serif" }}
-      >
-        {label}
-      </motion.span>
+      <div className="relative z-10 flex flex-col w-full h-full">
+        <div className="pt-safe" />
 
-      <motion.div
-        className="relative z-10 w-[56px] h-[56px] rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing"
-        style={{ x, background: buttonBg, border: `1px solid ${accentColor}` }}
-        drag="x"
-        dragConstraints={{ left: 0, right: buttonMax }}
-        dragElastic={0.02}
-        onDragEnd={handleDragEnd}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M9 18l6-6-6-6" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </motion.div>
-    </div>
-  );
-}
-
-export default function IncomingCall({ onSelectPath }) {
-  useEffect(() => {
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200, 1000]);
-  }, []);
-
-  // Audio elements (will play if browser allows, requires user interaction which they had on previous screen if we add a "start" button, but for now we autoPlay and hope or rely on the global mute button)
-  return (
-    <div
-      className="fixed inset-0 z-40 overflow-hidden flex flex-col select-none"
-      style={{
-        backgroundColor: '#0A0514', // Very deep space/wakanda background
-      }}
-    >
-      {/* Audio for incoming transmission */}
-      <audio src="/audio/transmission_incoming.mp3" autoPlay loop />
-
-      <HexGridBackground />
-      
-      <div className="absolute inset-0 pointer-events-none z-[1]"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(10,5,20,0.9) 100%)' }} />
-
-      {/* Header */}
-      <div className="relative z-10 flex flex-col items-center pt-24">
+        {/* Identité de l'appelant */}
         <motion.div
-          className="flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full border border-red-500/30 bg-red-500/10"
-          initial={{ opacity: 0, y: -10 }}
+          className="flex flex-col items-center mt-[13vh] px-8"
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
+          transition={{ delay: 0.14, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <motion.div 
-            className="w-2 h-2 rounded-full bg-red-500"
-            animate={{ opacity: [1, 0, 1] }}
-            transition={{ duration: 1, repeat: Infinity }}
-          />
-          <span className="text-red-400 text-xs tracking-[0.2em] uppercase font-bold font-mono">
-            Transmission Sécurisée
-          </span>
-        </motion.div>
-
-        <motion.h1
-          className="text-white text-4xl font-black text-center"
-          style={{ fontFamily: "'Syne', sans-serif", letterSpacing: '-0.02em', textShadow: '0 0 20px rgba(139,92,246,0.5)' }}
-          initial={{ opacity: 0, scale: 0.94 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4, duration: 0.7 }}
-        >
-          PROTOCOLE URIEL
-        </motion.h1>
-        
-        <motion.p
-          className="text-[#8B5CF6] mt-2 font-mono text-xs tracking-widest opacity-70"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          EN ATTENTE DE DÉCHIFFREMENT...
-        </motion.p>
-      </div>
-
-      {/* Center Hologram Core */}
-      <div className="relative z-10 flex-1 flex items-center justify-center">
-        <motion.div
-          className="relative w-32 h-32 flex items-center justify-center"
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.6, type: 'spring' }}
-        >
-          <RippleRing delay={0} color="#8B5CF6" />
-          <RippleRing delay={0.6} color="#0EA5E9" />
-          
-          <div className="w-20 h-20 rounded-full relative flex items-center justify-center z-10"
-               style={{ background: 'linear-gradient(135deg, #1B0B2E 0%, #4C1D95 100%)', boxShadow: '0 0 40px rgba(139,92,246,0.6)' }}>
-            <motion.div 
-              className="w-16 h-16 rounded-full border border-white/20 border-t-white/80"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-            />
-            {/* Core icon / logo */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
-            </div>
+          {/* Monogramme : ce qu'affiche iOS quand le contact n'a pas de photo. */}
+          <div
+            className="w-[92px] h-[92px] rounded-full flex items-center justify-center mb-6"
+            style={{
+              background: 'linear-gradient(160deg,#8e9199,#5c6069)',
+              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.28)',
+            }}
+          >
+            <span
+              className="text-white text-[40px]"
+              style={{ fontFamily: 'var(--font-ios)', fontWeight: 400 }}
+            >
+              {caller.initials}
+            </span>
           </div>
+
+          {/* Poids 300, pas gras : détail décisif pour la crédibilité. */}
+          <h1
+            className="text-white text-center"
+            style={{
+              fontFamily: 'var(--font-ios)',
+              fontSize: 'clamp(34px,9.5vw,42px)',
+              fontWeight: 300,
+              letterSpacing: '-0.015em',
+              lineHeight: 1.1,
+            }}
+          >
+            {caller.name}
+          </h1>
+
+          <motion.p
+            className="text-white/62 text-[19px] mt-[9px]"
+            style={{ fontFamily: 'var(--font-ios)', fontWeight: 400 }}
+            animate={{ opacity: [0.62, 0.95, 0.62] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            {caller.label}
+          </motion.p>
+        </motion.div>
+
+        <div className="flex-1" />
+
+        {/* Actions */}
+        <motion.div
+          className="flex flex-col items-center w-full px-8 pb-safe"
+          initial={{ opacity: 0, y: 26 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.34, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="flex justify-center gap-[74px] mb-11">
+            <SecondaryAction icon={<RemindIcon />} label="Rappel" onClick={handleDecline} />
+            <SecondaryAction icon={<MessageIcon />} label="Message" onClick={handleDecline} />
+          </div>
+
+          <div className="flex justify-center gap-[96px] mb-7">
+            <CallButton variant="decline" label="Refuser" onClick={handleDecline} />
+            <CallButton variant="accept" label="Accepter" onClick={handleAccept} pulse />
+          </div>
+
+          <div className="w-[135px] h-[5px] rounded-full bg-white/70 mb-1" />
         </motion.div>
       </div>
-
-      {/* Bottom Actions */}
-      <motion.div
-        className="relative z-10 flex flex-col items-center gap-6 pb-16 px-6 w-full max-w-sm mx-auto"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1, duration: 0.8 }}
-      >
-        <SwipeToUnlock 
-          label="Déchiffrer les Coordonnées" 
-          accentColor="#0EA5E9" // Stark Blue for map
-          onUnlock={() => onSelectPath('map')} 
-        />
-        <SwipeToUnlock 
-          label="Accéder à l'Univers" 
-          accentColor="#D4AF37" // Infinity Gold for constellation
-          onUnlock={() => onSelectPath('constellation')} 
-        />
-      </motion.div>
-    </div>
+    </motion.div>
   );
 }
+

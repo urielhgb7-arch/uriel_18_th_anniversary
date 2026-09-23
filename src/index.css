@@ -1,56 +1,223 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+   Deux mondes : "REAL" (iOS natif, neutre) et "NEXUS" (multivers, saturé).
+   ───────────────────────────────────────────────────────────────────────────── */
 @theme {
-  --color-deep-purple: #120b2e;
-  --color-violet-accent: #6b21a8;
-  --color-emerald-accent: #10b981;
-  --color-gold-accent: #ffd700;
-  --font-inter: 'Inter', sans-serif;
-  --font-space: 'Space Grotesk', sans-serif;
+  /* Nexus palette */
+  --color-void: #05020a;
+  --color-abyss: #0a0514;
+  --color-tchalla: #1b0b2e;
+  --color-vibranium: #8b5cf6;
+  --color-stark: #0ea5e9;
+  --color-infinity: #d4af37;
+  --color-doom: #10b981;
+  --color-alert: #ef4444;
+
+  /* iOS real-world palette */
+  --color-ios-green: #34c759;
+  --color-ios-red: #ff3b30;
+  --color-ios-gray: #8e8e93;
+
+  /* Typographie */
+  --font-display: 'Syne', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  /* La pile système réelle : sert l'illusion iOS (SF Pro sur iPhone). */
+  --font-ios: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Inter', sans-serif;
+
+  /* Easings cinématiques */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-expo: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @layer base {
   :root {
     color-scheme: dark;
-    --bg-base: hsl(260, 60%, 8%); /* Deep Purple Base */
-    --text-hero: clamp(3rem, 8vw + 1rem, 6rem);
-    --text-h1: clamp(2rem, 5vw, 4rem);
-    --text-body: clamp(1rem, 1.5vw, 1.125rem);
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
   }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
   body {
-    @apply text-white antialiased overflow-x-hidden;
-    background-color: var(--bg-base);
-    min-height: 100dvh;
     margin: 0;
-    font-family: var(--font-inter);
-    /* Noise texture */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    padding: 0;
+    background: #000;
+    overscroll-behavior: none;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-space);
-    letter-spacing: -0.03em;
+
+  body {
+    @apply text-white antialiased;
+    font-family: var(--font-sans);
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Aucune sélection accidentelle pendant les drags / swipes. */
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.035em;
+    margin: 0;
+  }
+
+  /* Masque les scrollbars sans casser le scroll. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  canvas {
+    display: block;
+    touch-action: none;
   }
 }
 
 @layer utilities {
-  .glass-panel {
-    background: rgba(30, 20, 50, 0.3);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  .pt-safe {
+    padding-top: calc(var(--safe-t) + 0.5rem);
+  }
+  .pb-safe {
+    padding-bottom: calc(var(--safe-b) + 0.5rem);
   }
 
-  .diffused-glow {
-    box-shadow: 0 20px 80px -20px rgba(107, 33, 168, 0.4);
-  }
-  
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-emerald-400;
+  .glass-nexus {
+    background: rgba(20, 10, 40, 0.55);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(139, 92, 246, 0.28);
+    box-shadow:
+      0 24px 60px -20px rgba(0, 0, 0, 0.8),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
 
-  .title-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/40;
+  /* Glassmorphism iOS : très clair, très flou, faible saturation. */
+  .glass-ios {
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(28px) saturate(130%);
+    -webkit-backdrop-filter: blur(28px) saturate(130%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+  }
+
+  .text-nexus-gradient {
+    background: linear-gradient(120deg, #fff 0%, #c4b5fd 45%, #7dd3fc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hud-corner {
+    background-image:
+      linear-gradient(to right, currentColor 2px, transparent 2px),
+      linear-gradient(to bottom, currentColor 2px, transparent 2px);
+    background-size: 14px 2px, 2px 14px;
+    background-repeat: no-repeat;
+  }
+}
+
+/* ── Keyframes partagées ───────────────────────────────────────────────────── */
+@keyframes nexus-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nexus-ping {
+  0% {
+    transform: scale(0.45);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes nexus-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ── Marqueur Leaflet ──────────────────────────────────────────────────────────
+   Injecté en HTML brut dans une divIcon, donc hors de portée de Tailwind :
+   ces classes doivent exister en CSS global. */
+.nx-pin {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+}
+.nx-pin-ring,
+.nx-pin-cross,
+.nx-pin-core {
+  position: absolute;
+  border-radius: 9999px;
+}
+.nx-pin-ring {
+  inset: 0;
+  border: 1px solid #0ea5e9;
+  animation: nexus-ping 2.2s ease-out infinite;
+}
+.nx-pin-ring--late {
+  animation-delay: 1.1s;
+}
+.nx-pin-cross {
+  inset: 18px;
+  border: 1.5px dashed rgba(239, 68, 68, 0.9);
+  animation: nexus-spin 5s linear infinite;
+}
+.nx-pin-core {
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.85);
+}
+
+/* Attribution OSM : obligatoire, mais elle doit se fondre dans le HUD.
+   Le filtre d'inversion de la carte s'applique aussi à elle, d'où les
+   couleurs inversées volontairement. */
+.leaflet-container {
+  background: #050a10;
+  font-family: var(--font-mono);
+}
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.72) !important;
+  color: #222 !important;
+  font-size: 9px !important;
+  padding: 1px 5px !important;
+}
+.leaflet-control-attribution a {
+  color: #333 !important;
+}
+
+/* Respect strict de prefers-reduced-motion : on neutralise tout mouvement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }
