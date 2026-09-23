@@ -214,27 +214,6 @@ export default function MapItinerary({ onSwitchToConstellation }) {
               <Navigation size={18} />
               Naviguer vers le lieu
             </motion.button>
-
-            {/* Confirm presence */}
-            <motion.a
-              href={`https://wa.me/${content.whatsapp.number}?text=${encodeURIComponent(content.whatsapp.message)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-medium text-white/80 text-sm"
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-              whileHover={{ background: 'rgba(255,255,255,0.09)' }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <svg width="18" height="18" viewBox="0 0 40 40" fill="none">
-                <circle cx="20" cy="20" r="20" fill="#25D366" />
-                <path d="M28.7 11.3A11.9 11.9 0 0 0 20 8C13.4 8 8 13.4 8 20c0 2.1.5 4.1 1.5 5.9L8 32l6.3-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.3-8.5z" fill="white" />
-              </svg>
-              Confirmer ma présence
-            </motion.a>
           </div>
 
           {/* Switch to constellation */}
