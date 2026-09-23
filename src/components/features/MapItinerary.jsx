@@ -65,11 +65,10 @@ export default function MapItinerary({ onSwitchToConstellation }) {
       fadeAnimation: true,
     }).setView([ZOOM_SEQUENCE[0].lat, ZOOM_SEQUENCE[0].lng], ZOOM_SEQUENCE[0].zoom);
 
-    // ── Premium tile layer: CartoDB Voyager — 100% free, no API key ──
-    // Warm beige/cream tones, clean roads, elegant typography on map
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
+    // ── Tile layer: OpenStreetMap — zero API key, forever free ──
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc',
+      maxZoom: 19,
       attribution: '',
     }).addTo(mapInstance.current);
 
@@ -140,8 +139,12 @@ export default function MapItinerary({ onSwitchToConstellation }) {
     >
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
-      {/* ── Map fills screen ── */}
-      <div ref={mapRef} className="absolute inset-0 z-0" />
+      {/* ── Map fills screen — CSS filter warms up OSM tiles ── */}
+      <div
+        ref={mapRef}
+        className="absolute inset-0 z-0"
+        style={{ filter: 'saturate(0.75) contrast(1.05) brightness(1.03)' }}
+      />
 
       {/* ── Cinematic overlay during zoom ── */}
       <AnimatePresence>
