@@ -1,9 +1,46 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Navigation, MapPin, Sparkles, ExternalLink } from 'lucide-react';
+import { Navigation, MapPin, Sparkles } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import * as L from 'leaflet';
 import content from '../../content.json';
+
+/**
+ * Opens navigation to destination as directly as the platform allows.
+ * Android  → google.navigation: scheme → Maps opens in full nav mode (1 tap Start)
+ * iPhone   → comgooglemaps:// or Apple Maps → same result
+ * Desktop  → web URL fallback
+ */
+function openNavigation(lat, lng) {
+  const ua = navigator.userAgent || '';
+  const isAndroid = /android/i.test(ua);
+  const isIOS = /iphone|ipad|ipod/i.test(ua);
+
+  if (isAndroid) {
+    // Native Android intent: opens Google Maps directly in navigation mode
+    window.location.href = `google.navigation:q=${lat},${lng}&mode=d`;
+    // Fallback after 1.5s if the app isn't installed
+    setTimeout(() => {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
+    }, 1500);
+  } else if (isIOS) {
+    // Try Google Maps app first
+    const gm = `comgooglemaps://?daddr=${lat},${lng}&directionsmode=driving`;
+    const fallback = `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
+    // Hidden iframe trick to try deep link without leaving page
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = gm;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      window.location.href = fallback;
+    }, 1200);
+  } else {
+    // Desktop fallback
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
+  }
+}
 
 export default function MapItinerary({ onSwitchToConstellation }) {
   const mapRef = useRef(null);
@@ -11,9 +48,6 @@ export default function MapItinerary({ onSwitchToConstellation }) {
 
   const { lat, lng, name } = content.event.location;
   const destination = [lat, lng];
-
-  // Google Maps deep-link → opens navigation app directly
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
 
   useEffect(() => {
     if (!mapInstance.current) {
@@ -166,10 +200,8 @@ export default function MapItinerary({ onSwitchToConstellation }) {
             </p>
 
             {/* Navigate CTA */}
-            <motion.a
-              href={googleMapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <motion.button
+              onClick={() => openNavigation(lat, lng)}
               className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-semibold text-black text-base mb-3"
               style={{
                 background: 'linear-gradient(135deg, #ffd700 0%, #f0a500 100%)',
@@ -181,8 +213,7 @@ export default function MapItinerary({ onSwitchToConstellation }) {
             >
               <Navigation size={18} />
               Naviguer vers le lieu
-              <ExternalLink size={14} className="opacity-60" />
-            </motion.a>
+            </motion.button>
 
             {/* Confirm presence */}
             <motion.a
