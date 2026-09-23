@@ -36,10 +36,11 @@ export function UnlockSlider({ onUnlock }) {
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-20 rounded-full border border-white/10 overflow-hidden bg-black/40 backdrop-blur-md flex items-center p-[5px]"
+      className="relative w-full h-20 rounded-full border border-[#8B5CF6]/30 overflow-hidden bg-[#05020A]/60 backdrop-blur-md flex items-center p-[5px]"
+      style={{ boxShadow: 'inset 0 0 20px rgba(139,92,246,0.1)' }}
     >
       <motion.div 
-        className="absolute inset-0 bg-emerald-green"
+        className="absolute inset-0 bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9]"
         style={{ opacity: backgroundOpacity }}
       />
       
@@ -47,7 +48,9 @@ export function UnlockSlider({ onUnlock }) {
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
         style={{ opacity: textOpacity }}
       >
-        <span className="text-white/50 font-medium tracking-widest text-sm uppercase">Slide to reveal</span>
+        <span className="text-[#0EA5E9]/70 font-mono tracking-widest text-xs uppercase animate-pulse">
+          Initialiser la connexion
+        </span>
       </motion.div>
 
       <motion.div
@@ -57,9 +60,13 @@ export function UnlockSlider({ onUnlock }) {
         dragMomentum={false}
         onDragEnd={handleDragEnd}
         style={{ x }}
-        className="w-16 h-16 rounded-full bg-neon-yellow flex items-center justify-center cursor-grab active:cursor-grabbing z-10 shadow-[0_0_20px_rgba(204,255,0,0.4)]"
+        className="w-16 h-16 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing z-10"
+        style={{
+          background: 'linear-gradient(135deg, #0EA5E9, #8B5CF6)',
+          boxShadow: '0 0 20px rgba(14,165,233,0.5), inset 0 0 10px rgba(255,255,255,0.5)'
+        }}
       >
-        {isUnlocked ? <Unlock size={24} className="text-black" /> : <ArrowRight size={24} className="text-black" />}
+        {isUnlocked ? <Unlock size={24} className="text-white" /> : <ArrowRight size={24} className="text-white" />}
       </motion.div>
     </div>
   );

@@ -1,78 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 
-// ─── Starfield Canvas ─────────────────────────────────────────────────────────
-function StarfieldCanvas() {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let raf;
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    const stars = Array.from({ length: 180 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.4 + 0.3,
-      a: Math.random(),
-      da: (Math.random() - 0.5) * 0.004,
-      vx: (Math.random() - 0.5) * 0.08,
-      vy: (Math.random() - 0.5) * 0.08,
-    }));
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (const s of stars) {
-        s.x += s.vx;
-        s.y += s.vy;
-        s.a += s.da;
-        if (s.a <= 0 || s.a >= 1) s.da *= -1;
-        if (s.x < 0) s.x = canvas.width;
-        if (s.x > canvas.width) s.x = 0;
-        if (s.y < 0) s.y = canvas.height;
-        if (s.y > canvas.height) s.y = 0;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${Math.max(0, Math.min(1, s.a))})`;
-        ctx.fill();
-      }
-      raf = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
+// ── Background Hex Grid / Wakanda Vibe ──────────────────────────────────────
+function HexGridBackground() {
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
+    <div 
+      className="absolute inset-0 z-0 opacity-10 pointer-events-none"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='69.2820323027551' viewBox='0 0 40 69.2820323027551' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 17.3205081L20 5.77350269 0 17.3205081v23.0940108L20 51.9615242l20-11.5470054V17.3205081zM20 63.5085296L0 51.9615242v-23.0940108L20 17.3205081l20 11.5470054v23.0940108L20 63.5085296z' fill='%238B5CF6' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+        backgroundSize: '40px'
+      }}
     />
   );
 }
 
-function RippleRing({ delay = 0 }) {
+function RippleRing({ delay = 0, color = 'rgba(139,92,246,0.5)' }) {
   return (
     <motion.div
-      className="absolute inset-0 rounded-full border border-white/20"
-      initial={{ scale: 1, opacity: 0.6 }}
-      animate={{ scale: 2.2, opacity: 0 }}
-      transition={{ duration: 2.4, repeat: Infinity, delay, ease: 'easeOut' }}
+      className="absolute inset-0 rounded-full border-2"
+      style={{ borderColor: color }}
+      initial={{ scale: 1, opacity: 0.8 }}
+      animate={{ scale: 2.5, opacity: 0 }}
+      transition={{ duration: 2, repeat: Infinity, delay, ease: 'easeOut' }}
     />
   );
 }
 
-function SwipeToAnswer({ label, onUnlock }) {
+function SwipeToUnlock({ label, onUnlock, accentColor = '#8B5CF6' }) {
   const x = useMotionValue(0);
   const [trackWidth, setTrackWidth] = useState(300);
   const trackRef = useRef(null);
@@ -81,11 +35,10 @@ function SwipeToAnswer({ label, onUnlock }) {
     if (trackRef.current) setTrackWidth(trackRef.current.offsetWidth);
   }, []);
 
-  const buttonMax = trackWidth - 72;
+  const buttonMax = trackWidth - 64;
   const textOpacity = useTransform(x, [0, buttonMax * 0.5], [1, 0]);
-  const arrowOpacity = useTransform(x, [0, buttonMax * 0.3], [1, 0]);
-  const trackGlow = useTransform(x, [0, buttonMax], ['rgba(255,255,255,0)', 'rgba(52,199,89,0.3)']);
-  const buttonBg = useTransform(x, [0, buttonMax * 0.8], ['rgba(255,255,255,1)', 'rgba(52,199,89,1)']);
+  const trackGlow = useTransform(x, [0, buttonMax], ['rgba(0,0,0,0)', `rgba(139,92,246,0.3)`]); // using vibranium color
+  const buttonBg = useTransform(x, [0, buttonMax * 0.8], ['rgba(20,10,40,1)', accentColor]);
 
   const handleDragEnd = (_, info) => {
     if (info.offset.x > buttonMax * 0.75) {
@@ -99,146 +52,150 @@ function SwipeToAnswer({ label, onUnlock }) {
   return (
     <div
       ref={trackRef}
-      className="relative w-full h-[76px] rounded-full flex items-center px-[6px]"
+      className="relative w-full h-[64px] rounded-full flex items-center px-1 overflow-hidden"
       style={{
-        background: 'rgba(80,80,80,0.45)',
+        background: 'rgba(20,10,40,0.6)',
         backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.12)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+        border: `1px solid rgba(139,92,246,0.3)`,
+        boxShadow: `inset 0 0 20px rgba(139,92,246,0.1)`,
       }}
     >
       <motion.div className="absolute inset-0 rounded-full" style={{ background: trackGlow }} />
+      
+      {/* Scan line effect inside track */}
+      <motion.div 
+        className="absolute top-0 bottom-0 w-8 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"
+        animate={{ left: ['-20%', '120%'] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+      />
+
       <motion.span
-        className="absolute w-full text-center pointer-events-none text-base font-medium tracking-wide"
-        style={{ opacity: textOpacity, color: 'rgba(255,255,255,0.72)' }}
+        className="absolute w-full text-center pointer-events-none text-sm font-medium tracking-[0.15em] uppercase text-[#8B5CF6]"
+        style={{ opacity: textOpacity, fontFamily: "'DM Sans', sans-serif" }}
       >
         {label}
       </motion.span>
+
       <motion.div
-        className="relative z-10 w-[64px] h-[64px] rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-[0_2px_12px_rgba(0,0,0,0.3)]"
-        style={{ x, background: buttonBg }}
+        className="relative z-10 w-[56px] h-[56px] rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+        style={{ x, background: buttonBg, border: `1px solid ${accentColor}` }}
         drag="x"
         dragConstraints={{ left: 0, right: buttonMax }}
         dragElastic={0.02}
         onDragEnd={handleDragEnd}
       >
-        <motion.svg style={{ opacity: arrowOpacity }} width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M9 18l6-6-6-6" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        </motion.svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18l6-6-6-6" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </motion.div>
-    </div>
-  );
-}
-
-function SecondaryBtn({ icon, label }) {
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div
-        className="w-[64px] h-[64px] rounded-full flex items-center justify-center"
-        style={{
-          background: 'rgba(80,80,80,0.40)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.10)',
-        }}
-      >
-        {icon}
-      </div>
-      <span className="text-white/75 text-[13px]">{label}</span>
     </div>
   );
 }
 
 export default function IncomingCall({ onSelectPath }) {
   useEffect(() => {
-    if (navigator.vibrate) navigator.vibrate([400, 200, 400, 200, 400]);
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200, 1000]);
   }, []);
 
+  // Audio elements (will play if browser allows, requires user interaction which they had on previous screen if we add a "start" button, but for now we autoPlay and hope or rely on the global mute button)
   return (
     <div
       className="fixed inset-0 z-40 overflow-hidden flex flex-col select-none"
       style={{
-        background: 'linear-gradient(180deg, #3a3d42 0%, #2c2f33 35%, #1c1e21 65%, #111214 100%)',
+        backgroundColor: '#0A0514', // Very deep space/wakanda background
       }}
     >
-      <StarfieldCanvas />
-      <div
-        className="absolute inset-0 pointer-events-none z-[1]"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)' }}
-      />
+      {/* Audio for incoming transmission */}
+      <audio src="/audio/transmission_incoming.mp3" autoPlay loop />
+
+      <HexGridBackground />
+      
+      <div className="absolute inset-0 pointer-events-none z-[1]"
+        style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(10,5,20,0.9) 100%)' }} />
 
       {/* Header */}
-      <div className="relative z-10 flex flex-col items-center pt-20">
+      <div className="relative z-10 flex flex-col items-center pt-24">
         <motion.div
-          className="flex items-center gap-1.5 mb-3"
-          initial={{ opacity: 0, y: -8 }}
+          className="flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full border border-red-500/30 bg-red-500/10"
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
         >
-          <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
-            <circle cx="20" cy="20" r="20" fill="#25D366" />
-            <path d="M28.7 11.3A11.9 11.9 0 0 0 20 8C13.4 8 8 13.4 8 20c0 2.1.5 4.1 1.5 5.9L8 32l6.3-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.3-8.5zm-8.7 18.4c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.3-.4a9.9 9.9 0 0 1-1.5-5.3c0-5.5 4.5-10 10-10 2.7 0 5.2 1 7 2.9 1.9 1.9 2.9 4.3 2.9 7 0 5.5-4.5 10-10 10zm5.5-7.5c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.1-.7.1-.2.3-.8.9-1 1.1-.2.2-.4.2-.7.1-1-.5-2-1-2.7-2-.6-.7-1.3-1.6-1.4-1.9-.1-.3 0-.5.1-.7l.5-.5c.1-.2.2-.4.3-.6.1-.2 0-.4 0-.6-.1-.2-.7-1.8-.9-2.4-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.7s1.1 3.1 1.3 3.3c.2.2 2.2 3.4 5.3 4.7.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.2-.6-.4z" fill="white" />
-          </svg>
-          <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: '17px' }}>Audio WhatsApp...</span>
+          <motion.div 
+            className="w-2 h-2 rounded-full bg-red-500"
+            animate={{ opacity: [1, 0, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          />
+          <span className="text-red-400 text-xs tracking-[0.2em] uppercase font-bold font-mono">
+            Transmission Sécurisée
+          </span>
         </motion.div>
 
         <motion.h1
-          style={{ fontSize: 'clamp(2rem, 7vw, 2.8rem)', fontWeight: '300', color: '#fff', letterSpacing: '-0.02em' }}
+          className="text-white text-4xl font-black text-center"
+          style={{ fontFamily: "'Syne', sans-serif", letterSpacing: '-0.02em', textShadow: '0 0 20px rgba(139,92,246,0.5)' }}
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ delay: 0.4, duration: 0.7 }}
         >
-          Associé Uriel 😊✨
+          PROTOCOLE URIEL
         </motion.h1>
-      </div>
-
-      {/* Center ripple */}
-      <div className="relative z-10 flex-1 flex items-center justify-center">
-        <motion.div
-          className="relative w-20 h-20"
+        
+        <motion.p
+          className="text-[#8B5CF6] mt-2 font-mono text-xs tracking-widest opacity-70"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          <RippleRing delay={0} />
-          <RippleRing delay={0.8} />
-          <RippleRing delay={1.6} />
-          <div className="w-full h-full rounded-full" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)' }} />
+          EN ATTENTE DE DÉCHIFFREMENT...
+        </motion.p>
+      </div>
+
+      {/* Center Hologram Core */}
+      <div className="relative z-10 flex-1 flex items-center justify-center">
+        <motion.div
+          className="relative w-32 h-32 flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6, type: 'spring' }}
+        >
+          <RippleRing delay={0} color="#8B5CF6" />
+          <RippleRing delay={0.6} color="#0EA5E9" />
+          
+          <div className="w-20 h-20 rounded-full relative flex items-center justify-center z-10"
+               style={{ background: 'linear-gradient(135deg, #1B0B2E 0%, #4C1D95 100%)', boxShadow: '0 0 40px rgba(139,92,246,0.6)' }}>
+            <motion.div 
+              className="w-16 h-16 rounded-full border border-white/20 border-t-white/80"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            />
+            {/* Core icon / logo */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+          </div>
         </motion.div>
       </div>
 
-      {/* Bottom */}
+      {/* Bottom Actions */}
       <motion.div
-        className="relative z-10 flex flex-col items-center gap-8 pb-14 px-6"
+        className="relative z-10 flex flex-col items-center gap-6 pb-16 px-6 w-full max-w-sm mx-auto"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ delay: 1, duration: 0.8 }}
       >
-        <div className="flex w-full max-w-xs justify-between px-4">
-          <SecondaryBtn
-            label="Message"
-            icon={
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" />
-              </svg>
-            }
-          />
-          <SecondaryBtn
-            label="Rappeler plus tard"
-            icon={
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="1.8" />
-                <polyline points="12 7 12 12 15 15" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            }
-          />
-        </div>
-
-        <div className="w-full max-w-sm flex flex-col gap-4">
-          <SwipeToAnswer label="Glisser pour le lieu" onUnlock={() => onSelectPath('map')} />
-          <SwipeToAnswer label="Glisser pour me découvrir" onUnlock={() => onSelectPath('constellation')} />
-        </div>
+        <SwipeToUnlock 
+          label="Déchiffrer les Coordonnées" 
+          accentColor="#0EA5E9" // Stark Blue for map
+          onUnlock={() => onSelectPath('map')} 
+        />
+        <SwipeToUnlock 
+          label="Accéder à l'Univers" 
+          accentColor="#D4AF37" // Infinity Gold for constellation
+          onUnlock={() => onSelectPath('constellation')} 
+        />
       </motion.div>
     </div>
   );

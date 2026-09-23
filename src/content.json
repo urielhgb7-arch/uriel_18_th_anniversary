@@ -3,18 +3,26 @@
     "title": "Uriel 18th Anniversary",
     "date": "2026-10-15",
     "location": {
-      "lat": 6.3492895978751855,
-      "lng": 2.3320373663562055,
-      "name": "Lieu Secret, Cotonou"
+      "lat": 48.8584,
+      "lng": 2.2945,
+      "name": "Lieu Secret, Paris"
     }
   },
   "colors": {
-    "navy": "#0a0f1c",
-    "violet": "#4a00e0",
-    "gold": "#ffd700",
-    "emerald": "#10b981",
-    "yellow": "#facc15"
+    "tchalla": "#1B0B2E",
+    "vibranium": "#8B5CF6",
+    "infinityGold": "#D4AF37",
+    "starkBlue": "#0EA5E9",
+    "doomGreen": "#10B981"
   },
+  "infinityStones": [
+    { "id": "space", "color": "#3B82F6", "name": "Espace" },
+    { "id": "mind", "color": "#EAB308", "name": "Esprit" },
+    { "id": "reality", "color": "#EF4444", "name": "Réalité" },
+    { "id": "power", "color": "#A855F7", "name": "Pouvoir" },
+    { "id": "time", "color": "#22C55E", "name": "Temps" },
+    { "id": "soul", "color": "#F97316", "name": "Âme" }
+  ],
   "whatsapp": {
     "number": "+22901449902086",
     "message": "Salut Uriel ! Je suis prêt(e) à vivre cette expérience pour ton 18ème anniversaire ! 🚀"
@@ -25,126 +33,27 @@
     "Préparez-vous pour une soirée inoubliable."
   ],
   "constellationTraits": [
-    {
-      "y": 30,
-      "title": "Ambition dévorante",
-      "x": 5,
-      "id": 1,
-      "desc": "Viser toujours plus loin, au-delà des limites."
-    },
-    {
-      "y": 70,
-      "title": "Écoute attentive",
-      "x": 15,
-      "id": 2,
-      "desc": "Comprendre l'autre avant même qu'il ne parle."
-    },
-    {
-      "y": 30,
-      "title": "Créativité sans limite",
-      "x": 25,
-      "id": 3,
-      "desc": "L'art de transformer le vide en or."
-    },
-    {
-      "y": 30,
-      "title": "Calme olympien",
-      "x": 40,
-      "id": 4,
-      "desc": "Garder la maîtrise quand tout s'agite."
-    },
-    {
-      "y": 30,
-      "title": "Franchise brutale",
-      "x": 55,
-      "id": 5,
-      "desc": "La vérité, pure et sans détour."
-    },
-    {
-      "y": 30,
-      "title": "Loyauté sans faille",
-      "x": 75,
-      "id": 6,
-      "desc": "Un pilier inébranlable pour ceux qui comptent."
-    },
-    {
-      "y": 30,
-      "title": "Esprit d'analyse",
-      "x": 85,
-      "id": 7,
-      "desc": "Voir les détails que les autres ignorent."
-    },
-    {
-      "y": 70,
-      "title": "Adaptabilité constante",
-      "x": 95,
-      "id": 8,
-      "desc": "Se fondre et maîtriser chaque nouvel environnement."
-    }
+    { "id": 1, "title": "Ambition dévorante", "desc": "Viser toujours plus loin, au-delà des limites.", "x": 10, "y": 20 },
+    { "id": 2, "title": "Écoute attentive", "desc": "Comprendre l'autre avant même qu'il ne parle.", "x": 15, "y": 60 },
+    { "id": 3, "title": "Créativité sans limite", "desc": "L'art de transformer le vide en or.", "x": 25, "y": 25 },
+    { "id": 4, "title": "Calme olympien", "desc": "Garder la maîtrise quand tout s'agite.", "x": 35, "y": 65 },
+    { "id": 5, "title": "Franchise brutale", "desc": "La vérité, pure et sans détour.", "x": 50, "y": 25 },
+    { "id": 6, "title": "Loyauté sans faille", "desc": "Un pilier inébranlable pour ceux qui comptent.", "x": 65, "y": 70 },
+    { "id": 7, "title": "Esprit d'analyse", "desc": "Voir les détails que les autres ignorent.", "x": 75, "y": 20 },
+    { "id": 8, "title": "Adaptabilité constante", "desc": "Se fondre et maîtriser chaque nouvel environnement.", "x": 90, "y": 65 }
   ],
   "enigmas": [
-    {
-      "id": 1,
-      "question": "Entre le sport et le design, quel est mon moteur principal ?",
-      "options": [
-        "L'adrénaline du sport",
-        "La créativité du design",
-        "Les deux en parfaite harmonie"
-      ],
-      "answer": 2
-    },
-    {
-      "id": 2,
-      "question": "Quel genre d'Anime me passionne le plus ?",
-      "options": [
-        "Ceux avec de la grande stratégie",
-        "Ceux pleins d'action",
-        "Ceux avec un message profond"
-      ],
-      "answer": 0
-    },
-    {
-      "id": 3,
-      "question": "En musique, quel est mon rythme de prédilection ?",
-      "options": [
-        "Le rythme posé et chill",
-        "Le rythme intense et motivant",
-        "Les mélodies complexes"
-      ],
-      "answer": 1
-    }
+    { "id": 1, "question": "Entre le sport et le design, quel est mon moteur principal ?", "options": ["L'adrénaline du sport", "La créativité du design", "Les deux en parfaite harmonie"], "answer": 2 },
+    { "id": 2, "question": "Quel genre d'Anime me passionne le plus ?", "options": ["Ceux avec de la grande stratégie", "Ceux pleins d'action", "Ceux avec un message profond"], "answer": 0 },
+    { "id": 3, "question": "En musique, quel est mon rythme de prédilection ?", "options": ["Le rythme posé et chill", "Le rythme intense et motivant", "Les mélodies complexes"], "answer": 1 }
   ],
   "passions": [
-    {
-      "id": 1,
-      "name": "Sport",
-      "icon": "⚽"
-    },
-    {
-      "id": 2,
-      "name": "Animes",
-      "icon": "🎬"
-    },
-    {
-      "id": 3,
-      "name": "Musique",
-      "icon": "🎵"
-    },
-    {
-      "id": 4,
-      "name": "Projets",
-      "icon": "🚀"
-    },
-    {
-      "id": 5,
-      "name": "Design",
-      "icon": "🎨"
-    },
-    {
-      "id": 6,
-      "name": "Technologie",
-      "icon": "💻"
-    }
+    { "id": 1, "name": "Sport", "icon": "⚽" },
+    { "id": 2, "name": "Animes", "icon": "🎬" },
+    { "id": 3, "name": "Musique", "icon": "🎵" },
+    { "id": 4, "name": "Projets", "icon": "🚀" },
+    { "id": 5, "name": "Design", "icon": "🎨" },
+    { "id": 6, "name": "Technologie", "icon": "💻" }
   ],
   "finalMessage": {
     "title": "Bienvenue dans mon Univers.",

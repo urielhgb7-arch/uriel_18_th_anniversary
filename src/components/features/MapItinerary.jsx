@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Navigation, MapPin, Sparkles, ChevronDown } from 'lucide-react';
+import { Navigation, MapPin, Sparkles, Target } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import * as L from 'leaflet';
 import content from '../../content.json';
 
-/** Platform-aware deep-link navigation */
 function openNavigation(lat, lng) {
   const ua = navigator.userAgent || '';
   const isAndroid = /android/i.test(ua);
@@ -32,27 +31,25 @@ function openNavigation(lat, lng) {
   }
 }
 
-// ── Cinematic zoom sequence ────────────────────────────────────────────────────
-// Africa overview → West Africa → Cotonou city → venue
 const ZOOM_SEQUENCE = [
-  { lat: 8.0, lng: 2.0, zoom: 3, duration: 0 },       // Africa overview
-  { lat: 7.0, lng: 2.3, zoom: 6, duration: 2000 },     // West Africa
-  { lat: 6.5, lng: 2.33, zoom: 11, duration: 2500 },   // Cotonou region
-  { lat: 6.3492895978751855, lng: 2.3320373663562055, zoom: 16, duration: 2000 }, // Venue
+  { lat: 8.0, lng: 2.0, zoom: 3, duration: 0 },
+  { lat: 7.0, lng: 2.3, zoom: 6, duration: 2000 },
+  { lat: 6.5, lng: 2.33, zoom: 11, duration: 2000 },
+  { lat: 6.3492895978751855, lng: 2.3320373663562055, zoom: 17, duration: 2500 },
 ];
 
 export default function MapItinerary({ onSwitchToConstellation }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
-  const [zoomStage, setZoomStage] = useState(0); // 0=flying, 1=arrived
+  const [zoomStage, setZoomStage] = useState(0);
   const [showUI, setShowUI] = useState(false);
+  const [coords, setCoords] = useState("00.0000° N, 00.0000° E");
 
   const { lat, lng, name } = content.event.location;
 
   useEffect(() => {
     if (mapInstance.current) return;
 
-    // ── Init map at Africa overview ──
     mapInstance.current = L.map(mapRef.current, {
       zoomControl: false,
       attributionControl: false,
@@ -65,24 +62,25 @@ export default function MapItinerary({ onSwitchToConstellation }) {
       fadeAnimation: true,
     }).setView([ZOOM_SEQUENCE[0].lat, ZOOM_SEQUENCE[0].lng], ZOOM_SEQUENCE[0].zoom);
 
-    // ── Tile layer: OpenStreetMap — zero API key, forever free ──
+    // Standard OSM but filtered in CSS to look like a dark tactical map
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       subdomains: 'abc',
       maxZoom: 19,
-      attribution: '',
     }).addTo(mapInstance.current);
 
-    // ── Animate zoom sequence ──
     let step = 1;
     const runStep = () => {
       if (step >= ZOOM_SEQUENCE.length) {
-        // Done — show marker + UI
         addDestinationMarker();
         setZoomStage(1);
-        setTimeout(() => setShowUI(true), 600);
+        setTimeout(() => setShowUI(true), 800);
         return;
       }
       const s = ZOOM_SEQUENCE[step];
+      
+      // Update fake coords display
+      setCoords(`${(s.lat + Math.random()).toFixed(4)}° N, ${(s.lng + Math.random()).toFixed(4)}° E`);
+
       setTimeout(() => {
         mapInstance.current?.flyTo([s.lat, s.lng], s.zoom, {
           animate: true,
@@ -95,12 +93,13 @@ export default function MapItinerary({ onSwitchToConstellation }) {
           setTimeout(runStep, s.duration + 400);
         } else {
           setTimeout(() => {
+            setCoords(`${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`);
             addDestinationMarker();
             setZoomStage(1);
-            setTimeout(() => setShowUI(true), 600);
+            setTimeout(() => setShowUI(true), 800);
           }, s.duration + 400);
         }
-      }, step === 1 ? 600 : 0);
+      }, step === 1 ? 800 : 0);
     };
     runStep();
 
@@ -114,233 +113,131 @@ export default function MapItinerary({ onSwitchToConstellation }) {
 
   function addDestinationMarker() {
     if (!mapInstance.current) return;
-    const vipIcon = L.divIcon({
+    const hudIcon = L.divIcon({
       className: '',
       html: `
-        <div style="position:relative;width:56px;height:56px;display:flex;align-items:center;justify-content:center;">
-          <div style="position:absolute;inset:0;border-radius:50%;background:rgba(255,215,0,0.25);animation:vip-pulse 2.2s ease-in-out infinite;"></div>
-          <div style="position:absolute;inset:10px;border-radius:50%;background:rgba(255,215,0,0.15);animation:vip-pulse 2.2s ease-in-out infinite 0.6s;"></div>
-          <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#ffd700,#f0a500);border:3px solid white;box-shadow:0 0 24px rgba(255,215,0,0.9),0 4px 16px rgba(0,0,0,0.3);position:relative;z-index:1;"></div>
+        <div style="position:relative;width:60px;height:60px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:absolute;inset:0;border:1px solid #0EA5E9;border-radius:50%;animation:hud-pulse 2s ease-out infinite;"></div>
+          <div style="position:absolute;inset:15px;border:2px dashed #EF4444;border-radius:50%;animation:spin 4s linear infinite;"></div>
+          <div style="width:6px;height:6px;background:#EF4444;border-radius:50%;box-shadow:0 0 10px #EF4444;"></div>
         </div>
         <style>
-          @keyframes vip-pulse{0%,100%{transform:scale(1);opacity:.65}50%{transform:scale(1.7);opacity:.08}}
+          @keyframes hud-pulse{0%{transform:scale(0.5);opacity:1}100%{transform:scale(1.5);opacity:0}}
+          @keyframes spin{100%{transform:rotate(360deg)}}
         </style>
       `,
-      iconSize: [56, 56],
-      iconAnchor: [28, 28],
+      iconSize: [60, 60],
+      iconAnchor: [30, 30],
     });
-    L.marker([lat, lng], { icon: vipIcon }).addTo(mapInstance.current);
+    L.marker([lat, lng], { icon: hudIcon }).addTo(mapInstance.current);
   }
 
   return (
-    <div
-      className="fixed inset-0 flex flex-col overflow-hidden"
-      style={{ background: '#f5f3ee' }}
-    >
-      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-
-      {/* ── Map fills screen — CSS filter warms up OSM tiles ── */}
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#050A10]">
+      {/* ── Map with heavy dark mode CSS filters ── */}
       <div
         ref={mapRef}
         className="absolute inset-0 z-0"
-        style={{ filter: 'saturate(0.75) contrast(1.05) brightness(1.03)' }}
+        style={{ filter: 'invert(100%) hue-rotate(180deg) brightness(80%) contrast(150%) sepia(30%) saturate(150%)' }}
       />
+      
+      {/* Scan lines overlay */}
+      <div className="absolute inset-0 z-10 pointer-events-none opacity-20"
+           style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #0EA5E9 2px, #0EA5E9 4px)', mixBlendMode: 'overlay' }} />
 
-      {/* ── Cinematic overlay during zoom ── */}
+      {/* ── Cinematic overlay during zoom (Target Acquisition) ── */}
       <AnimatePresence>
         {zoomStage === 0 && (
           <motion.div
             className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none"
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, scale: 1.2 }}
             transition={{ duration: 0.8 }}
           >
-            {/* Vignette to focus on center */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background: 'radial-gradient(ellipse at center, transparent 35%, rgba(20,15,40,0.65) 100%)',
-              }}
-            />
-            {/* Cinematic bars */}
-            <div className="absolute top-0 left-0 right-0 h-16"
-              style={{ background: 'rgba(12,8,28,0.85)', backdropFilter: 'blur(8px)' }} />
-            <div className="absolute bottom-0 left-0 right-0 h-16"
-              style={{ background: 'rgba(12,8,28,0.85)', backdropFilter: 'blur(8px)' }} />
-            {/* Scan line */}
-            <motion.div
-              className="absolute left-0 right-0 h-px z-40"
-              style={{ background: 'rgba(255,215,0,0.6)', boxShadow: '0 0 12px 2px rgba(255,215,0,0.4)' }}
-              animate={{ top: ['0%', '100%'] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
-            />
-            {/* Label */}
-            <div className="relative z-10 text-center">
-              <motion.p
-                className="text-yellow-400/80 text-[11px] tracking-[0.35em] uppercase font-medium mb-2"
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                Localisation en cours...
-              </motion.p>
-              <motion.div
-                className="flex items-center justify-center gap-1.5"
-                animate={{ opacity: [0.3, 0.8, 0.3] }}
-                transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
-              >
-                {[0, 1, 2].map(i => (
-                  <motion.div
-                    key={i}
-                    className="w-1.5 h-1.5 rounded-full bg-yellow-400"
-                    animate={{ scale: [1, 1.4, 1] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                  />
-                ))}
-              </motion.div>
+            <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(5,10,16,0.9) 100%)' }} />
+            
+            {/* Center HUD Reticle */}
+            <div className="relative w-48 h-48 flex items-center justify-center">
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+                          className="absolute inset-0 border-t-2 border-b-2 border-[#0EA5E9] rounded-full opacity-50" />
+              <motion.div animate={{ rotate: -360 }} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                          className="absolute inset-4 border-l-2 border-r-2 border-[#EF4444] rounded-full opacity-50" />
+              <Target size={40} className="text-[#0EA5E9]" />
+            </div>
+
+            <div className="absolute bottom-32 text-center font-mono text-[#0EA5E9]">
+              <p className="text-xs tracking-[0.4em] mb-2 animate-pulse">RECHERCHE DE CIBLE...</p>
+              <p className="text-lg tracking-widest">{coords}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Top gradient vignette (after landing) ── */}
       <AnimatePresence>
         {showUI && (
           <>
-            {/* Top gradient */}
-            <motion.div
-              className="absolute top-0 left-0 right-0 z-10 pointer-events-none"
-              style={{
-                height: '220px',
-                background: 'linear-gradient(180deg, rgba(250,248,243,0.97) 0%, rgba(250,248,243,0.7) 60%, transparent 100%)',
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8 }}
-            />
-
             {/* ── HUD Top ── */}
             <motion.div
-              className="absolute top-0 left-0 right-0 z-20 px-5 pt-12"
-              initial={{ opacity: 0, y: -16 }}
+              className="absolute top-0 left-0 right-0 z-20 px-6 pt-14 pointer-events-none"
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin size={14} style={{ color: '#c9a227' }} />
-                <span
-                  className="text-[10px] tracking-[0.3em] uppercase font-semibold"
-                  style={{ color: '#c9a227', fontFamily: "'DM Sans', sans-serif" }}
-                >
-                  Lieu de l'événement
-                </span>
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <MapPin size={14} className="text-[#EF4444]" />
+                    <span className="text-[10px] tracking-[0.3em] uppercase font-bold text-[#EF4444] font-mono">
+                      Cible Verrouillée
+                    </span>
+                  </div>
+                  <h1 className="text-3xl font-black text-white font-syne uppercase tracking-tighter" style={{ textShadow: '0 0 10px rgba(14,165,233,0.5)' }}>
+                    {name}
+                  </h1>
+                </div>
+                <div className="text-right font-mono text-xs text-[#0EA5E9] opacity-70 mt-2">
+                  <p>LAT: {lat.toFixed(5)}</p>
+                  <p>LNG: {lng.toFixed(5)}</p>
+                </div>
               </div>
-              <h1
-                className="text-3xl font-black mb-0.5"
-                style={{
-                  fontFamily: "'Syne', sans-serif",
-                  letterSpacing: '-0.03em',
-                  color: '#1a1520',
-                }}
-              >
-                {name}
-              </h1>
-              {content.event.date && (
-                <p
-                  className="text-sm"
-                  style={{ color: 'rgba(30,20,50,0.5)', fontFamily: "'DM Sans', sans-serif" }}
-                >
-                  {new Date(content.event.date).toLocaleDateString('fr-FR', {
-                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-                  })}
-                </p>
-              )}
             </motion.div>
 
-            {/* Bottom gradient */}
+            {/* ── Bottom CTA Panel (Stark/Wakanda style) ── */}
             <motion.div
-              className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none"
-              style={{
-                height: '300px',
-                background: 'linear-gradient(0deg, rgba(250,248,243,0.98) 0%, rgba(250,248,243,0.75) 55%, transparent 100%)',
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8 }}
-            />
-
-            {/* ── Bottom CTA Panel ── */}
-            <motion.div
-              className="absolute bottom-0 left-0 right-0 z-20 px-5 pb-10"
-              initial={{ opacity: 0, y: 24 }}
+              className="absolute bottom-0 left-0 right-0 z-20 px-6 pb-12"
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
-              {/* Card */}
               <div
                 className="rounded-3xl p-5 mb-4 relative overflow-hidden"
                 style={{
-                  background: 'rgba(255,252,245,0.92)',
-                  backdropFilter: 'blur(24px)',
-                  WebkitBackdropFilter: 'blur(24px)',
-                  border: '1px solid rgba(201,162,39,0.2)',
-                  boxShadow: '0 -8px 40px rgba(0,0,0,0.08), 0 20px 60px rgba(0,0,0,0.04)',
+                  background: 'rgba(5,10,16,0.85)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(14,165,233,0.3)',
+                  boxShadow: '0 0 30px rgba(14,165,233,0.1)',
                 }}
               >
-                {/* Top gold line */}
-                <div
-                  className="absolute top-0 left-8 right-8 h-px rounded-full"
-                  style={{ background: 'linear-gradient(90deg, transparent, rgba(201,162,39,0.6), transparent)' }}
-                />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#0EA5E9] to-transparent opacity-50" />
 
-                <p
-                  className="text-center text-sm mb-4"
-                  style={{ color: 'rgba(30,20,50,0.55)', fontFamily: "'DM Sans', sans-serif" }}
-                >
-                  Appuie pour ouvrir la navigation directement
-                </p>
-
-                {/* Navigate CTA */}
                 <motion.button
                   onClick={() => openNavigation(lat, lng)}
-                  className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-semibold text-black text-base relative overflow-hidden group"
+                  className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-bold text-black text-sm relative overflow-hidden group uppercase tracking-widest font-mono"
                   style={{
-                    background: 'linear-gradient(135deg, #ffd700 0%, #f0a500 100%)',
-                    boxShadow: '0 4px 24px rgba(255,215,0,0.45), 0 2px 8px rgba(0,0,0,0.15)',
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontWeight: '600',
+                    background: '#0EA5E9',
+                    boxShadow: '0 0 20px rgba(14,165,233,0.4)',
                   }}
-                  whileHover={{ scale: 1.02, boxShadow: '0 8px 40px rgba(255,215,0,0.6)' }}
-                  whileTap={{ scale: 0.97 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  {/* Shimmer sweep */}
-                  <motion.div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100"
-                    style={{
-                      background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%)',
-                      backgroundSize: '200% 100%',
-                    }}
-                    animate={{ backgroundPosition: ['200% 0', '-200% 0'] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                  />
-                  <Navigation size={18} className="relative z-10" />
-                  <span className="relative z-10">Naviguer vers le lieu</span>
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Navigation size={18} />
+                  <span>Activer la Navigation</span>
                 </motion.button>
-
-                {/* Bottom gold line */}
-                <div
-                  className="absolute bottom-0 left-8 right-8 h-px rounded-full"
-                  style={{ background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.3), transparent)' }}
-                />
               </div>
 
-              {/* Switch to experience */}
               <button
                 onClick={onSwitchToConstellation}
-                className="w-full flex items-center justify-center gap-2 py-2.5 text-[12px]"
-                style={{ color: 'rgba(30,20,50,0.35)', fontFamily: "'DM Sans', sans-serif" }}
+                className="w-full flex items-center justify-center gap-2 py-3 text-[11px] uppercase tracking-widest text-white/50 hover:text-white transition-colors font-mono"
               >
-                <Sparkles size={13} />
-                Découvrir l'expérience
+                <Sparkles size={14} />
+                Accéder au Multivers
               </button>
             </motion.div>
           </>

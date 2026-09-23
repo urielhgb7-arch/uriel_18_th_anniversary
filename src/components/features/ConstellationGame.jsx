@@ -1,450 +1,453 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, ChevronDown } from 'lucide-react';
-import { toPng } from 'html-to-image';
 import content from '../../content.json';
 
-// ── Real star positions (named stars that feel authentic) ──────────────────────
-const BACKGROUND_STARS = Array.from({ length: 240 }, (_, i) => ({
-  id: i,
-  x: Math.random() * 100,
-  y: Math.random() * 100,
-  // A few "bright" personality stars scattered in background
-  r: i < 12 ? Math.random() * 2 + 2 : Math.random() * 1.2 + 0.3,
-  bright: i < 12,
-  twinkleOffset: Math.random() * Math.PI * 2,
-  twinklePeriod: Math.random() * 2500 + 2000,
-}));
+// Couleurs exactes des pierres d'infinité (MCU)
+const STONES = [
+  { name: 'Space', color: '#3B82F6', text: 'Espace' }, // Bleu
+  { name: 'Mind', color: '#EAB308', text: 'Esprit' },  // Jaune
+  { name: 'Reality', color: '#EF4444', text: 'Réalité' }, // Rouge
+  { name: 'Power', color: '#A855F7', text: 'Pouvoir' },  // Violet
+  { name: 'Time', color: '#22C55E', text: 'Temps' },   // Vert
+  { name: 'Soul', color: '#F97316', text: 'Âme' }     // Orange
+];
 
-// ── Stardust Particle Trail ────────────────────────────────────────────────────
-function StardustTrail({ x1, y1, x2, y2, visible }) {
-  const numParticles = 12;
+function TimelineBackground() {
   return (
-    <g>
-      {Array.from({ length: numParticles }).map((_, i) => {
-        const t = i / (numParticles - 1);
-        const px = x1 + (x2 - x1) * t;
-        const py = y1 + (y2 - y1) * t;
-        const delay = t * 0.8;
-        const size = (1 - Math.abs(t - 0.5) * 2) * 1.5 + 0.3;
-        return (
-          <motion.circle
-            key={i}
-            cx={px}
-            cy={py}
-            r={size}
-            fill="url(#stardust)"
-            initial={{ opacity: 0, scale: 0 }}
-            animate={visible
-              ? { opacity: [0, 0.9, 0.5], scale: [0, 1.2, 1] }
-              : { opacity: 0, scale: 0 }
-            }
-            transition={{
-              duration: 1.2,
-              delay: visible ? delay : 0,
-              ease: 'easeOut',
-            }}
-            style={{ filter: 'blur(0.3px)' }}
-          />
-        );
-      })}
-      {/* Core glow line */}
-      <motion.line
-        x1={x1} y1={y1} x2={x2} y2={y2}
-        stroke="url(#lineGrad)"
-        strokeWidth="0.3"
-        strokeLinecap="round"
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={visible ? { pathLength: 1, opacity: 0.4 } : { pathLength: 0, opacity: 0 }}
-        transition={{ duration: 1, ease: 'easeInOut', delay: 0.3 }}
-      />
-    </g>
-  );
-}
-
-// ── Background Star Field ──────────────────────────────────────────────────────
-function BackgroundField() {
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 80);
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
       <defs>
-        <radialGradient id="brightStar" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fff9e0" stopOpacity="1" />
-          <stop offset="40%" stopColor="#ffd700" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="dimStar" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#e0e8ff" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#7c9eff" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="stardust" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ffd700" stopOpacity="1" />
-          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#ffd700" stopOpacity="0.6" />
-          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.6" />
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <linearGradient id="timeStream" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="transparent" />
+          <stop offset="50%" stopColor="#F59E0B" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="transparent" />
         </linearGradient>
-        {/* Nebula filters */}
-        <filter id="nebula1">
-          <feGaussianBlur stdDeviation="6" />
-        </filter>
-        <filter id="nebula2">
-          <feGaussianBlur stdDeviation="9" />
-        </filter>
       </defs>
-
-      {/* Nebula clouds */}
-      <ellipse cx="25" cy="30" rx="20" ry="15" fill="rgba(100,60,220,0.07)" filter="url(#nebula1)" />
-      <ellipse cx="75" cy="65" rx="22" ry="16" fill="rgba(60,180,160,0.05)" filter="url(#nebula2)" />
-      <ellipse cx="50" cy="80" rx="18" ry="12" fill="rgba(180,80,220,0.06)" filter="url(#nebula1)" />
-
-      {/* Background stars */}
-      {BACKGROUND_STARS.map((s) => {
-        const tNow = Date.now();
-        const brightness = 0.4 + 0.6 * Math.sin((tNow / s.twinklePeriod) * Math.PI * 2 + s.twinkleOffset);
-        return (
-          <g key={s.id}>
-            {s.bright && (
-              <circle
-                cx={s.x}
-                cy={s.y}
-                r={s.r * 3.5}
-                fill="url(#brightStar)"
-                opacity={brightness * 0.3}
-              />
-            )}
-            <circle
-              cx={s.x}
-              cy={s.y}
-              r={s.r}
-              fill={s.bright ? '#fff9d0' : '#e0e8ff'}
-              opacity={s.bright ? brightness : brightness * 0.6}
-            />
-          </g>
-        );
-      })}
+      
+      {/* Background timeline flow */}
+      <motion.path
+        d="M -10,50 Q 25,60 50,50 T 110,50"
+        fill="none"
+        stroke="url(#timeStream)"
+        strokeWidth="0.5"
+        filter="url(#glow)"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 3, ease: 'easeInOut' }}
+      />
+      <motion.path
+        d="M -10,50 Q 25,40 50,50 T 110,50"
+        fill="none"
+        stroke="#F59E0B"
+        strokeWidth="0.2"
+        strokeOpacity="0.8"
+        filter="url(#glow)"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 3, ease: 'easeInOut', delay: 0.5 }}
+      />
     </svg>
   );
 }
 
-// ── Trait Card ─────────────────────────────────────────────────────────────────
-function TraitCard({ trait, onClose }) {
+function TraitModal({ trait, stone, onClose }) {
   return (
     <motion.div
-      className="absolute bottom-0 left-0 right-0 z-50"
-      initial={{ y: '100%', opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: '80%', opacity: 0, scale: 0.96 }}
-      transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+      className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
     >
-      {/* Click-away overlay */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />
-
-      <div
-        className="relative z-50 mx-4 mb-8 p-6 rounded-3xl overflow-hidden"
+      <motion.div
+        className="w-full max-w-sm p-8 rounded-3xl relative overflow-hidden"
         style={{
-          background: 'rgba(15,10,35,0.80)',
-          backdropFilter: 'blur(28px)',
-          WebkitBackdropFilter: 'blur(28px)',
-          border: '1px solid rgba(255,215,0,0.25)',
-          boxShadow: '0 0 60px rgba(167,139,250,0.25), 0 20px 60px rgba(0,0,0,0.6)',
+          background: 'rgba(10,5,20,0.9)',
+          border: `1px solid ${stone.color}40`,
+          boxShadow: `0 0 60px ${stone.color}30, inset 0 0 20px ${stone.color}20`,
         }}
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: -10 }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent" />
-
-        {/* Star icon */}
-        <div className="flex items-center gap-3 mb-4">
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(255,215,0,0.15)', border: '1px solid rgba(255,215,0,0.4)' }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffd700">
-              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-            </svg>
+        <div className="absolute top-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${stone.color}, transparent)` }} />
+        
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center relative" style={{ background: `${stone.color}20`, border: `1px solid ${stone.color}80` }}>
+             <motion.div className="absolute inset-0 rounded-full" style={{ background: stone.color, filter: 'blur(8px)' }} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 2, repeat: Infinity }} />
           </div>
           <div>
-            <p className="text-yellow-400/70 text-[10px] uppercase tracking-[0.2em] font-medium">Trait de caractère</p>
-            <h3
-              className="text-white text-xl font-bold"
-              style={{ fontFamily: "'Syne', sans-serif", letterSpacing: '-0.03em' }}
-            >
-              {trait.title}
-            </h3>
+            <p className="text-[10px] tracking-widest uppercase font-mono" style={{ color: stone.color }}>Pierre de l'{stone.text}</p>
+            <h3 className="text-white text-xl font-bold font-syne tracking-tight mt-1">{trait.title}</h3>
           </div>
         </div>
-
-        <p className="text-white/65 text-[15px] leading-relaxed" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-          {trait.desc}
-        </p>
-
-        {/* Close hint */}
-        <p className="text-white/25 text-[11px] text-center mt-5 uppercase tracking-widest">
-          Toucher ailleurs pour continuer
-        </p>
-      </div>
+        
+        <p className="text-white/70 text-sm leading-relaxed font-sans">{trait.desc}</p>
+        
+        <button onClick={onClose} className="mt-8 w-full py-3 rounded-xl text-xs uppercase tracking-widest font-mono text-white/50 hover:text-white hover:bg-white/5 transition-all">
+          Assimiler
+        </button>
+      </motion.div>
     </motion.div>
   );
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────────
-export default function ConstellationGame() {
-  const [discovered, setDiscovered] = useState(0);
-  const [activeCard, setActiveCard] = useState(null); // trait object or null
-  const [showExport, setShowExport] = useState(false);
-  const [cardClosed, setCardClosed] = useState(false);
-  const containerRef = useRef(null);
+// ── 3D Gauntlet Component ─────────────────────────────────────────────────────
+function NanoGauntlet({ onSnapStart, onSnapComplete }) {
+  const [phase, setPhase] = useState('idle'); // idle, surge, snap
+  const surgeAudioRef = useRef(null);
+  const snapAudioRef = useRef(null);
+  const voiceAudioRef = useRef(null);
 
-  const traits = content.constellationTraits;
-  const isComplete = discovered === traits.length;
+  useEffect(() => {
+    surgeAudioRef.current = new Audio('/audio/inception_braam.mp3');
+    snapAudioRef.current = new Audio('/audio/snap.mp3');
+    voiceAudioRef.current = new Audio('/audio/iamuriel.mp3'); // Fichier que l'utilisateur va fournir
+  }, []);
 
-  // Connection path data between consecutive stars
-  const connections = traits.slice(0, -1).map((t, i) => ({
-    x1: traits[i].x,
-    y1: traits[i].y,
-    x2: traits[i + 1].x,
-    y2: traits[i + 1].y,
-    visible: discovered > i + 1,
-  }));
-
-  const handleStarClick = useCallback((trait, index) => {
-    if (index !== discovered) return;
-    setActiveCard(trait);
-    setCardClosed(false);
-  }, [discovered]);
-
-  const handleCardClose = useCallback(() => {
-    setCardClosed(true);
-    setActiveCard(null);
-    const next = discovered + 1;
-    setDiscovered(next);
-    if (next === traits.length) {
-      setTimeout(() => setShowExport(true), 1500);
+  const triggerSequence = () => {
+    if (phase !== 'idle') return;
+    setPhase('surge');
+    
+    if (surgeAudioRef.current) {
+      surgeAudioRef.current.volume = 0.5;
+      surgeAudioRef.current.play().catch(() => {});
     }
-  }, [discovered, traits.length]);
-
-  const exportImage = async () => {
-    if (containerRef.current) {
-      const dataUrl = await toPng(containerRef.current, { quality: 0.95, pixelRatio: 2 });
-      const link = document.createElement('a');
-      link.download = 'uriel-constellation-vouh.png';
-      link.href = dataUrl;
-      link.click();
+    if (voiceAudioRef.current) {
+      voiceAudioRef.current.play().catch(() => {});
     }
+
+    // Sequence timing
+    setTimeout(() => {
+      setPhase('snap');
+      if (snapAudioRef.current) {
+        snapAudioRef.current.play().catch(() => {});
+      }
+      onSnapStart(); // Triggers the white flash
+      
+      setTimeout(() => {
+        setPhase('dust');
+        onSnapComplete(); // Tells parent the snap is done
+      }, 1500);
+    }, 4500); // 4.5 seconds for the dialogue "And me... I am Uriel"
   };
 
   return (
-    <>
-      {/* Google Fonts */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
-
-      <div className="relative w-full h-full overflow-hidden flex flex-col">
-        {/* Exportable container */}
-        <div
-          ref={containerRef}
-          className="relative flex-1 w-full flex flex-col items-center justify-start overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #050714 0%, #0a0520 40%, #090222 100%)' }}
-        >
-          {/* Background starfield */}
-          <div className="absolute inset-0">
-            <BackgroundField />
-          </div>
-
-          {/* Header */}
-          <motion.div
-            className="relative z-10 text-center mt-10 mb-4"
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <p className="text-yellow-400/50 text-[10px] tracking-[0.3em] uppercase font-medium mb-1"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}>
-              {isComplete ? 'Constellation complète' : `Étoile ${discovered + 1} / ${traits.length}`}
-            </p>
-            <h1
-              className="text-white text-3xl font-black"
-              style={{ fontFamily: "'Syne', sans-serif", letterSpacing: '-0.04em' }}
-            >
-              VOUH
-            </h1>
-            <p className="text-white/30 text-[11px] mt-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-              {isComplete ? 'Tu me connais maintenant.' : "Touche l'étoile qui pulse"}
-            </p>
+    <div className="absolute inset-0 flex flex-col items-center justify-center z-40 bg-black/80 backdrop-blur-md">
+      
+      {/* Dialogue Subtitles */}
+      <AnimatePresence>
+        {phase === 'surge' && (
+          <motion.div className="absolute top-32 flex flex-col items-center z-50">
+             <motion.p 
+               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+               className="text-white/60 text-lg font-serif italic mb-2 tracking-widest"
+             >
+               And me...
+             </motion.p>
+             <motion.h2 
+               initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }} 
+               animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} 
+               transition={{ delay: 2, duration: 0.5 }}
+               className="text-white text-5xl font-black font-syne tracking-tighter uppercase"
+               style={{ textShadow: '0 0 40px rgba(139,92,246,0.8)' }}
+             >
+               I AM URIEL.
+             </motion.h2>
           </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* SVG constellation area */}
-          <div className="relative w-full max-w-md flex-1 min-h-0 px-4">
-            <svg
-              className="w-full h-full"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="xMidYMid meet"
-            >
-              <defs>
-                <radialGradient id="stardust" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#ffd700" stopOpacity="1" />
-                  <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
-                </radialGradient>
-                <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#ffd700" stopOpacity="0.6" />
-                  <stop offset="50%" stopColor="#ffffff" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.6" />
-                </linearGradient>
-                <filter id="starGlow">
-                  <feGaussianBlur stdDeviation="1.5" result="glow" />
-                  <feMerge>
-                    <feMergeNode in="glow" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <filter id="bigGlow">
-                  <feGaussianBlur stdDeviation="3" result="glow" />
-                  <feMerge>
-                    <feMergeNode in="glow" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-
-              {/* Stardust trails between stars */}
-              {connections.map((c, i) => (
-                <StardustTrail key={i} {...c} />
-              ))}
-
-              {/* Trait star nodes */}
-              {traits.map((trait, i) => {
-                const isDiscovered = discovered > i;
-                const isCurrent = discovered === i;
-                const isNextUp = discovered === i;
-
-                return (
-                  <g
-                    key={`star-node-${i}`}
-                    onClick={() => handleStarClick(trait, i)}
-                    style={{ cursor: isCurrent ? 'pointer' : 'default' }}
-                  >
-                    {/* Outer pulse halo for current star */}
-                    {isNextUp && (
-                      <>
-                        <motion.circle
-                          cx={trait.x} cy={trait.y} r="6"
-                          fill="rgba(255,215,0,0.08)"
-                          animate={{ r: [4, 9, 4], opacity: [0.5, 0.1, 0.5] }}
-                          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                        />
-                        <motion.circle
-                          cx={trait.x} cy={trait.y} r="3.5"
-                          fill="rgba(255,215,0,0.2)"
-                          animate={{ r: [2.5, 5.5, 2.5], opacity: [0.8, 0.2, 0.8] }}
-                          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-                        />
-                      </>
-                    )}
-
-                    {/* Star body */}
-                    <motion.circle
-                      cx={trait.x}
-                      cy={trait.y}
-                      r={isDiscovered ? 2.2 : isCurrent ? 2 : 1}
-                      fill={isDiscovered ? '#ffd700' : isCurrent ? '#fff9a0' : 'rgba(255,255,255,0.25)'}
-                      animate={{
-                        r: isDiscovered ? 2.2 : isCurrent ? 2 : 1,
-                        filter: (isDiscovered || isCurrent)
-                          ? 'drop-shadow(0 0 4px #ffd700)'
-                          : 'none',
-                      }}
-                      transition={{ duration: 0.5 }}
-                      filter={isDiscovered || isCurrent ? 'url(#starGlow)' : undefined}
-                    />
-
-                    {/* Discovered star inner glow */}
-                    {isDiscovered && (
-                      <circle
-                        cx={trait.x} cy={trait.y} r={5}
-                        fill="rgba(255,215,0,0.07)"
-                        filter="url(#bigGlow)"
-                      />
-                    )}
-
-                    {/* Star label (show after discovered) */}
-                    {isDiscovered && (
-                      <motion.text
-                        x={trait.x + (trait.x > 60 ? -2.5 : 2.5)}
-                        y={trait.y - 3}
-                        textAnchor={trait.x > 60 ? 'end' : 'start'}
-                        fill="rgba(255,215,0,0.75)"
-                        fontSize="3"
-                        fontFamily="'DM Sans', sans-serif"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.4 }}
-                      >
-                        {trait.title}
-                      </motion.text>
-                    )}
-                  </g>
-                );
-              })}
-            </svg>
+      {/* 3D Gauntlet Rendering */}
+      <div 
+        className="relative w-64 h-96 cursor-pointer" 
+        style={{ perspective: '1000px' }}
+        onClick={triggerSequence}
+      >
+        <motion.div 
+          className="w-full h-full relative"
+          style={{ transformStyle: 'preserve-3d' }}
+          initial={{ rotateX: 20, rotateY: 0, y: 100, opacity: 0 }}
+          animate={{ 
+            rotateX: phase === 'idle' ? [20, 25, 20] : 10, 
+            rotateY: phase === 'idle' ? [-5, 5, -5] : 0, 
+            y: phase === 'dust' ? 200 : 0,
+            opacity: phase === 'dust' ? 0 : 1 
+          }}
+          transition={{ 
+            rotateX: { repeat: Infinity, duration: 4, ease: 'easeInOut' },
+            rotateY: { repeat: Infinity, duration: 5, ease: 'easeInOut' },
+            y: phase !== 'idle' ? { duration: 1 } : { duration: 0.8 },
+            opacity: { duration: phase === 'dust' ? 1.5 : 0.8 }
+          }}
+        >
+          {/* Forearm (Base) */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-48 rounded-t-3xl"
+               style={{ 
+                 background: 'linear-gradient(145deg, #1A1025, #0D0514)', 
+                 boxShadow: 'inset 0 0 20px rgba(139,92,246,0.3), 0 0 30px rgba(0,0,0,0.8)',
+                 transform: 'translateZ(-20px)'
+               }}>
+             {/* Energy Veins */}
+             <motion.div 
+               className="absolute inset-0 rounded-t-3xl opacity-0"
+               style={{ background: 'linear-gradient(0deg, transparent, rgba(139,92,246,0.5), transparent)' }}
+               animate={{ opacity: phase === 'surge' ? [0, 1, 0.5, 1] : 0, backgroundPositionY: ['100%', '0%'] }}
+               transition={{ duration: 1.5, repeat: phase === 'surge' ? Infinity : 0 }}
+             />
           </div>
 
-          {/* Export button */}
-          <AnimatePresence>
-            {showExport && (
-              <motion.button
-                onClick={exportImage}
-                className="relative z-20 mb-8 flex items-center gap-2 px-6 py-3.5 rounded-full text-sm font-semibold text-black"
-                style={{
-                  background: 'linear-gradient(135deg, #ffd700, #f0a500)',
-                  boxShadow: '0 0 40px rgba(255,215,0,0.5), 0 8px 24px rgba(0,0,0,0.4)',
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Download size={16} />
-                Sauvegarder ma constellation
-              </motion.button>
-            )}
-          </AnimatePresence>
+          {/* Palm/Back of Hand */}
+          <div className="absolute bottom-40 left-1/2 -translate-x-1/2 w-48 h-40 rounded-3xl"
+               style={{ 
+                 background: 'linear-gradient(135deg, #2A1B38, #11071A)', 
+                 boxShadow: 'inset 0 2px 1px rgba(255,255,255,0.2), inset 0 0 30px rgba(139,92,246,0.4)',
+                 transform: 'translateZ(10px)'
+               }}>
+            
+            {/* The 6 Stones */}
+            {STONES.map((stone, i) => {
+              // Mind stone is huge in center, others are on knuckles
+              const isMind = i === 1;
+              const size = isMind ? 28 : 16;
+              const xPos = isMind ? 50 : 15 + (i > 1 ? (i-1)*18 : i*18);
+              const yPos = isMind ? 60 : 15;
+              
+              return (
+                <motion.div 
+                  key={stone.name}
+                  className="absolute rounded-full"
+                  style={{
+                    width: size, height: size,
+                    left: `${xPos}%`, top: `${yPos}%`,
+                    transform: 'translate(-50%, -50%)',
+                    background: stone.color,
+                    boxShadow: `0 0 10px ${stone.color}, inset 0 0 5px rgba(255,255,255,0.8)`
+                  }}
+                  animate={{
+                    boxShadow: phase === 'surge' 
+                      ? [`0 0 20px ${stone.color}`, `0 0 60px ${stone.color}`, `0 0 20px ${stone.color}`]
+                      : `0 0 10px ${stone.color}`
+                  }}
+                  transition={{ duration: 0.5, repeat: Infinity }}
+                />
+              );
+            })}
+          </div>
 
-          {/* Scroll indicator */}
-          <AnimatePresence>
-            {isComplete && !showExport && (
-              <motion.div
-                className="absolute bottom-6 flex flex-col items-center text-white/40 pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.5 }}
-              >
-                <span className="text-[9px] uppercase tracking-[0.25em] mb-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  Continuer
-                </span>
-                <motion.div animate={{ y: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                  <ChevronDown size={20} />
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Fingers */}
+          {/* Thumb */}
+          <motion.div className="absolute bottom-52 left-4 w-12 h-32 rounded-full origin-bottom"
+               style={{ background: 'linear-gradient(to top, #2A1B38, #1A1025)', transform: 'rotate(-30deg) translateZ(15px)' }}
+               animate={{ rotate: phase === 'snap' ? -10 : -30 }} transition={{ duration: 0.1 }} />
+          {/* Index */}
+          <div className="absolute bottom-72 left-12 w-10 h-28 rounded-full" style={{ background: 'linear-gradient(to top, #2A1B38, #1A1025)', transform: 'translateZ(5px)' }} />
+          {/* Middle (Snapping finger) */}
+          <motion.div className="absolute bottom-76 left-24 w-10 h-32 rounded-full origin-bottom"
+               style={{ background: 'linear-gradient(to top, #2A1B38, #1A1025)', transform: 'translateZ(20px)' }}
+               animate={{ rotateX: phase === 'snap' ? 60 : 0, y: phase === 'snap' ? 20 : 0 }} transition={{ duration: 0.1 }} />
+          {/* Ring */}
+          <div className="absolute bottom-72 left-36 w-10 h-28 rounded-full" style={{ background: 'linear-gradient(to top, #2A1B38, #1A1025)', transform: 'translateZ(5px)' }} />
+          {/* Pinky */}
+          <div className="absolute bottom-68 left-48 w-8 h-24 rounded-full" style={{ background: 'linear-gradient(to top, #2A1B38, #1A1025)', transform: 'rotate(10deg) translateZ(0px)' }} />
+        </motion.div>
+
+        {phase === 'idle' && (
+          <p className="absolute -bottom-10 w-full text-center text-white/40 text-xs uppercase tracking-widest font-mono animate-pulse">
+            Appuyez pour initier la séquence
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Particle Dust Effect ──────────────────────────────────────────────────────
+function DustOverlay({ active }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!active || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+    for (let i = 0; i < 300; i++) {
+      particles.push({
+        x: window.innerWidth / 2 + (Math.random() - 0.5) * 300,
+        y: window.innerHeight / 2 + (Math.random() - 0.5) * 300,
+        vx: (Math.random() - 0.5) * 15 + 5, // Blow towards right
+        vy: (Math.random() - 0.5) * 15 - 5, // Blow upwards
+        size: Math.random() * 4 + 1,
+        life: 1,
+        decay: Math.random() * 0.02 + 0.01,
+        color: Math.random() > 0.5 ? '#8B5CF6' : '#2A1B38'
+      });
+    }
+
+    let raf;
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let alive = false;
+      particles.forEach(p => {
+        if (p.life <= 0) return;
+        alive = true;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= p.decay;
+        
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      
+      if (alive) raf = requestAnimationFrame(render);
+    };
+    render();
+    
+    return () => cancelAnimationFrame(raf);
+  }, [active]);
+
+  return (
+    <canvas ref={canvasRef} className="absolute inset-0 z-50 pointer-events-none" style={{ display: active ? 'block' : 'none' }} />
+  );
+}
+
+
+// ── Main Component ─────────────────────────────────────────────────────────────
+export default function ConstellationGame({ onUnlockNext }) {
+  const [discoveredStones, setDiscoveredStones] = useState([]);
+  const [activeStoneIdx, setActiveStoneIdx] = useState(null);
+  
+  const [showGauntlet, setShowGauntlet] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const [dust, setDust] = useState(false);
+  
+  const traits = content.constellationTraits; // Should be at least 6
+
+  const handleStoneClick = (index) => {
+    if (discoveredStones.includes(index)) return;
+    setActiveStoneIdx(index);
+  };
+
+  const closeTraitModal = () => {
+    if (activeStoneIdx !== null) {
+      const newStones = [...discoveredStones, activeStoneIdx];
+      setDiscoveredStones(newStones);
+      setActiveStoneIdx(null);
+      
+      if (newStones.length === 6) {
+        setTimeout(() => setShowGauntlet(true), 1500);
+      }
+    }
+  };
+
+  const handleSnapStart = () => {
+    setFlash(true);
+    setTimeout(() => setFlash(false), 800);
+    setTimeout(() => setDust(true), 100);
+  };
+
+  const handleSnapComplete = () => {
+    // Notify parent to unlock scroll and auto-scroll to next section
+    if (onUnlockNext) onUnlockNext();
+  };
+
+  return (
+    <div className="relative w-full h-full overflow-hidden flex flex-col bg-[#05020A]">
+      
+      {/* Snap Flash */}
+      <AnimatePresence>
+        {flash && (
+          <motion.div 
+            className="absolute inset-0 z-[100] bg-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          />
+        )}
+      </AnimatePresence>
+
+      <DustOverlay active={dust} />
+
+      {/* The Gauntlet Cinematic Overlay */}
+      <AnimatePresence>
+        {showGauntlet && !dust && (
+          <NanoGauntlet onSnapStart={handleSnapStart} onSnapComplete={handleSnapComplete} />
+        )}
+      </AnimatePresence>
+
+      {/* The Ancient One Timeline View */}
+      <div className="relative flex-1 w-full flex flex-col items-center justify-center">
+        <TimelineBackground />
+
+        <div className="absolute top-12 text-center z-10 w-full px-6">
+          <p className="text-[#F59E0B] text-xs tracking-[0.3em] uppercase font-bold mb-2 font-mono">
+            {discoveredStones.length === 6 ? 'Flux temporel stabilisé' : 'Recherche des fragments'}
+          </p>
+          <h1 className="text-white text-3xl font-black font-syne tracking-tighter" style={{ textShadow: '0 0 20px rgba(245,158,11,0.5)' }}>
+            CHRONOLOGIE
+          </h1>
+          <p className="text-white/50 text-sm mt-2 font-sans">
+            {discoveredStones.length === 6 ? 'Glissez pour forger le gantelet.' : 'Rassemblez les 6 pierres pour restaurer la réalité.'}
+          </p>
         </div>
 
-        {/* Trait Card overlay */}
-        <AnimatePresence>
-          {activeCard && (
-            <TraitCard key="trait-card" trait={activeCard} onClose={handleCardClose} />
-          )}
-        </AnimatePresence>
+        {/* Timeline Stones Container */}
+        <div className="relative z-20 w-full h-32 flex items-center justify-between px-8 max-w-lg mx-auto">
+          {/* Horizontal connecting line */}
+          <div className="absolute left-8 right-8 h-[2px] bg-white/10" />
+
+          {STONES.map((stone, i) => {
+            const isDiscovered = discoveredStones.includes(i);
+            const isCurrent = activeStoneIdx === i;
+            
+            return (
+              <div key={stone.name} className="relative flex flex-col items-center group">
+                <motion.button
+                  className="w-10 h-10 rounded-full relative flex items-center justify-center transition-transform hover:scale-110"
+                  style={{
+                    background: isDiscovered ? stone.color : '#111',
+                    border: `2px solid ${isDiscovered ? stone.color : '#333'}`,
+                    boxShadow: isDiscovered ? `0 0 20px ${stone.color}, inset 0 0 10px rgba(255,255,255,0.5)` : 'none'
+                  }}
+                  onClick={() => handleStoneClick(i)}
+                  whileTap={{ scale: 0.9 }}
+                  disabled={isDiscovered}
+                >
+                  {!isDiscovered && <div className="w-2 h-2 rounded-full bg-white/20" />}
+                  {isDiscovered && (
+                    <motion.div className="absolute inset-0 rounded-full border border-white" animate={{ scale: [1, 1.5], opacity: [0.5, 0] }} transition={{ duration: 1.5, repeat: Infinity }} />
+                  )}
+                </motion.button>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </>
+
+      <AnimatePresence>
+        {activeStoneIdx !== null && (
+          <TraitModal 
+            trait={traits[activeStoneIdx]} 
+            stone={STONES[activeStoneIdx]} 
+            onClose={closeTraitModal} 
+          />
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
