@@ -65,9 +65,10 @@ export default function MapItinerary({ onSwitchToConstellation }) {
       fadeAnimation: true,
     }).setView([ZOOM_SEQUENCE[0].lat, ZOOM_SEQUENCE[0].lng], ZOOM_SEQUENCE[0].zoom);
 
-    // ── Premium tile layer: Stadia Alidade Smooth (light, clean, beautiful) ──
-    // Completely free, no API key for low traffic
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
+    // ── Premium tile layer: CartoDB Voyager — 100% free, no API key ──
+    // Warm beige/cream tones, clean roads, elegant typography on map
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
       maxZoom: 20,
       attribution: '',
     }).addTo(mapInstance.current);
