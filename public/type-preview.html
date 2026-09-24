@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Typographie — 3 combinaisons Fontshare</title>
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=zodiak@100,300,400,700&f[]=switzer@200,300,400,500,700&f[]=azeret-mono@400,500&f[]=gambetta@300,400,500,700&f[]=general-sans@200,300,400,500,700&f[]=sentient@200,300,400,700&f[]=supreme@100,200,300,400,500,700&display=swap" />
+<style>
+  *{box-sizing:border-box;margin:0}
+  body{background:#0a0a0b;color:#f2f2f0;font-family:system-ui,sans-serif;padding:40px 28px 90px}
+  .head{max-width:1400px;margin:0 auto 42px}
+  .head h1{font-family:'Azeret Mono',monospace;font-size:11px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:#8a8a86}
+  .head p{margin-top:14px;font-size:14px;line-height:1.65;color:#6e6e6a;max-width:640px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1400px;margin:0 auto}
+  @media(max-width:1100px){.grid{grid-template-columns:1fr}}
+  .col{border:1px solid #1e1e20;border-radius:14px;padding:26px 24px 34px;background:#0d0d0f}
+  .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7a7a76}
+  .n{font-family:var(--serif);font-size:27px;font-weight:400;letter-spacing:0;margin:9px 0 5px}
+  .stack{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:#5f5f5c;line-height:1.75}
+  .note{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:#6e6e6a;margin-top:10px}
+  .rule{height:1px;background:#1c1c1e;margin:24px 0}
+  .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#555552;margin-bottom:10px}
+  .clock{font-family:var(--sans);font-weight:200;font-size:64px;letter-spacing:-.01em;font-variant-numeric:tabular-nums;line-height:1}
+  .date{font-family:var(--sans);font-weight:300;font-size:13px;color:#9a9a96;margin-top:5px}
+  .disp{font-family:var(--serif);font-weight:400;font-size:31px;line-height:1.15;letter-spacing:0}
+  .c1{font-family:var(--serif);font-weight:300;font-size:24px;color:#63635f;letter-spacing:0}
+  .c2{font-family:var(--serif);font-weight:700;font-size:30px;letter-spacing:0;margin-top:1px}
+  .bd{font-family:var(--sans);font-weight:400;font-size:14px;line-height:1.62;color:#b8b8b4}
+  .tt{font-family:var(--sans);font-weight:500;font-size:15px;letter-spacing:0;margin-bottom:4px}
+  .st{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8a8a86;line-height:2.1}
+  .cta{font-family:var(--sans);font-weight:500;font-size:13px;letter-spacing:.02em;background:#f2f2f0;color:#0a0a0b;border:0;border-radius:999px;padding:12px 22px;margin-top:4px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="head">
+  <h1>Typographie — 3 combinaisons Fontshare</h1>
+  <p>Discipline calquée sur les valeurs mesurées sur why.zero.university : tracking <b>0</b> sur tout ce qui est grand, <b>0.12em réservé aux petits labels mono uppercase</b>, weight max 700, aucun texte en dégradé. Les trois combos sont sur Fontshare (licence ITF gratuite, usage commercial inclus, aucun compte).</p>
+</div>
+<div class="grid" id="g"></div>
+<script>
+const COMBOS = [
+  {k:'Combo A', n:'Éditorial froid', serif:'Zodiak', sans:'Switzer', mono:'Azeret Mono',
+   w:'100 / 300 / 400 / 700', sw:'200 → 700',
+   note:'Serif à fort contraste, proche du didone. Registre froid, galerie, cosmique. Le plus spectaculaire en grand titre.'},
+  {k:'Combo B', n:'Humaniste chaleureux', serif:'Gambetta', sans:'General Sans', mono:'Azeret Mono',
+   w:'300 / 400 / 500 / 700', sw:'200 → 700',
+   note:'Serif humaniste à bas contraste, racines calligraphiques. Plus intime, plus proche, moins institutionnel.'},
+  {k:'Combo C', n:'Contemporain sobre', serif:'Sentient', sans:'Supreme', mono:'Azeret Mono',
+   w:'200 / 300 / 400 / 700', sw:'100 → 700',
+   note:'Serif éditorial contemporain taillé pour la lecture, légère singularité. Registre magazine, équilibré.'},
+];
+document.getElementById('g').innerHTML = COMBOS.map(c => `
+<div class="col" style="--serif:'${c.serif}',serif;--sans:'${c.sans}',sans-serif;--mono:'${c.mono}',monospace">
+  <div class="k">${c.k}</div>
+  <div class="n">${c.n}</div>
+  <div class="stack">${c.serif} · ${c.w}<br>${c.sans} · ${c.sw}<br>${c.mono} · 400/500</div>
+  <div class="note">${c.note}</div>
+
+  <div class="rule"></div>
+  <div class="lbl">Lock screen · heure weight 200 · tabular</div>
+  <div class="clock">20:18</div>
+  <div class="date">mercredi 15 octobre</div>
+
+  <div class="rule"></div>
+  <div class="lbl">Titre display · tracking 0</div>
+  <div class="disp">Bienvenue dans<br>mon Univers.</div>
+
+  <div class="rule"></div>
+  <div class="lbl">Cinématique · deux plans de profondeur</div>
+  <div class="c1">And me&hellip;</div>
+  <div class="c2">I am Uriel.</div>
+
+  <div class="rule"></div>
+  <div class="lbl">Qualité · sans</div>
+  <div class="tt">Créativité sans limite</div>
+  <div class="bd">L'art de transformer le vide en or.</div>
+
+  <div class="rule"></div>
+  <div class="lbl">Pierres · mono 10px · 0.12em</div>
+  <div class="st">Espace · Esprit · Réalité<br>Pouvoir · Temps · Âme</div>
+
+  <div class="rule"></div>
+  <div class="lbl">Action primaire</div>
+  <button class="cta">Obtenir l'itinéraire</button>
+</div>`).join('');
+</script>
+</body>
+</html>

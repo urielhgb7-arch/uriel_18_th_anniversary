@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import content from '../../content.json';
 import { startRingtone, stopRingtone, haptic, HAPTIC, playClick } from '../../lib/audio';
@@ -16,96 +16,97 @@ import { startRingtone, stopRingtone, haptic, HAPTIC, playClick } from '../../li
  * plus tard — on ne peut pas laisser un cul-de-sac sur la porte d'entrée.
  */
 
-const AcceptIcon = () => (
-  <svg width="33" height="33" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-    <path d="M6.6 10.8c1.5 2.9 3.7 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1l-2.2 2.3Z" />
+/**
+ * Épingle de localisation → Univers A.
+ * Rupture volontaire avec iOS : c'est ce décalage qui annonce le multivers.
+ * Le glyphe remplace le combiné vert, la place et la taille restent iOS.
+ */
+const PinIcon = () => (
+  <svg width="31" height="31" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 21.5c4.3-4.9 6.5-8.4 6.5-11.4A6.5 6.5 0 0 0 5.5 10c0 3 2.2 6.5 6.5 11.5Z" />
+    <circle cx="12" cy="9.8" r="2.4" />
   </svg>
 );
 
-/** Même glyphe, pivoté : exactement ce que fait iOS pour le bouton refuser. */
-const DeclineIcon = () => (
-  <svg
-    width="33"
-    height="33"
-    viewBox="0 0 24 24"
-    fill="white"
-    style={{ transform: 'rotate(135deg)' }}
-    aria-hidden="true"
-  >
-    <path d="M6.6 10.8c1.5 2.9 3.7 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1l-2.2 2.3Z" />
+/** Empreinte digitale → Univers B. */
+const FingerprintIcon = () => (
+  <svg width="31" height="31" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+    <path d="M12 3.5a8.5 8.5 0 0 0-8.5 8.5c0 1.3.2 2.5.7 3.6" />
+    <path d="M20.5 12A8.5 8.5 0 0 0 12 3.5" />
+    <path d="M19.9 16.4c.4-1.4.6-2.9.6-4.4a8.5 8.5 0 0 0-.6-3.1" />
+    <path d="M12 7a5 5 0 0 0-5 5c0 2.4.4 4.3 1.2 6.1" />
+    <path d="M17 12a5 5 0 0 0-5-5" />
+    <path d="M16.6 19.3c.7-2 1-4.3 1-7.3" />
+    <path d="M12 10.5a1.5 1.5 0 0 0-1.5 1.5c0 3 .4 5.6 1.1 7.8" />
+    <path d="M13.9 20.4c-.3-1.3-.4-2.8-.4-4.4v-4" />
   </svg>
 );
 
-const RemindIcon = () => (
-  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" aria-hidden="true">
-    <circle cx="12" cy="13" r="8" />
-    <path d="M12 9.5V13l2.5 1.6M5 4.2 7 2.4M19 4.2 17 2.4" strokeLinecap="round" />
-  </svg>
-);
+/**
+ * Les deux chemins, au diamètre réel iOS (76px) et à l'écart réel (96px).
+ * Ni vert ni rouge : ce n'est plus accepter/refuser mais un embranchement, donc
+ * les deux portent exactement le même poids visuel. Le halo respire des deux
+ * côtés, décalé, pour qu'aucun des deux ne se lise comme l'action par défaut.
+ */
+import { LiquidButton } from '../ui/liquid-glass-button';
+import { useMotionValue, useTransform } from 'framer-motion';
 
-const MessageIcon = () => (
-  <svg width="21" height="21" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-    <path d="M12 3C6.9 3 2.8 6.4 2.8 10.6c0 2.4 1.3 4.5 3.4 5.9-.2 1.5-.9 2.7-1.6 3.4 1.6-.2 3.4-1 4.6-1.9 .9.2 1.8.3 2.8.3 5.1 0 9.2-3.4 9.2-7.7S17.1 3 12 3Z" />
-  </svg>
-);
+function SlideAction({ onPick }) {
+  const x = useMotionValue(0);
 
-/** Action secondaire : rond translucide + label 13px, comme iOS. */
-function SecondaryAction({ icon, label, onClick }) {
+  const handleDragEnd = (event, info) => {
+    if (info.offset.x < -90) {
+      onPick('MAP');
+    } else if (info.offset.x > 90) {
+      onPick('SELF');
+    }
+  };
+
+  const pinOpacity = useTransform(x, [0, -60], [0, 1]);
+  const fingerOpacity = useTransform(x, [0, 60], [0, 1]);
+  const defaultOpacity = useTransform(x, [-40, 0, 40], [0, 1, 0]);
+
   return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center gap-[9px] w-[84px] transition-opacity active:opacity-55"
-    >
-      <div className="w-[52px] h-[52px] rounded-full flex items-center justify-center bg-white/[0.18] backdrop-blur-xl">
-        {icon}
+    <div className="relative w-[300px] h-[86px] flex items-center justify-center">
+      {/* Background track */}
+      <div className="absolute w-[300px] h-[76px] rounded-full bg-white/5 backdrop-blur-md border border-white/10 shadow-inner flex items-center justify-between px-6">
+        <div className="opacity-40 flex items-center justify-center">
+          <PinIcon />
+        </div>
+        <div className="opacity-40 flex items-center justify-center">
+          <FingerprintIcon />
+        </div>
       </div>
-      <span className="text-white/95 text-[13px]" style={{ fontFamily: 'var(--font-ios)' }}>
-        {label}
-      </span>
-    </button>
-  );
-}
-
-/** Bouton d'appel principal : 76px, le diamètre réel iOS. */
-function CallButton({ variant, label, onClick, pulse = false }) {
-  const isAccept = variant === 'accept';
-  return (
-    <div className="flex flex-col items-center gap-[11px]">
-      <div className="relative">
-        {/* Halo respirant : attire l'œil sur "Accepter" sans être voyant. */}
-        {pulse && (
-          <motion.span
-            className="absolute inset-0 rounded-full pointer-events-none"
-            style={{ background: 'var(--color-ios-green)' }}
-            animate={{ scale: [1, 1.5], opacity: [0.4, 0] }}
-            transition={{ duration: 1.9, repeat: Infinity, ease: 'easeOut' }}
-          />
-        )}
-        <motion.button
-          onClick={onClick}
-          aria-label={label}
-          className="relative w-[76px] h-[76px] rounded-full flex items-center justify-center"
-          style={{
-            background: isAccept ? 'var(--color-ios-green)' : 'var(--color-ios-red)',
-            boxShadow: `0 6px 22px ${isAccept ? 'rgba(52,199,89,0.42)' : 'rgba(255,59,48,0.38)'}`,
-          }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: 'spring', stiffness: 520, damping: 26 }}
-        >
-          {isAccept ? <AcceptIcon /> : <DeclineIcon />}
-        </motion.button>
-      </div>
-      <span className="text-white/95 text-[17px]" style={{ fontFamily: 'var(--font-ios)' }}>
-        {label}
-      </span>
+      
+      {/* Draggable button */}
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.4}
+        onDragEnd={handleDragEnd}
+        style={{ x }}
+        className="z-10 absolute flex items-center justify-center cursor-grab active:cursor-grabbing"
+      >
+        <LiquidButton variant="default" size="icon" className="w-[76px] h-[76px] rounded-full p-0">
+          <div className="relative w-full h-full flex items-center justify-center">
+             <motion.div style={{ opacity: defaultOpacity }} className="absolute flex items-center justify-center">
+               <div className="w-[12px] h-[12px] rounded-full bg-white/60" />
+             </motion.div>
+             <motion.div style={{ opacity: pinOpacity }} className="absolute flex items-center justify-center text-primary">
+               <PinIcon />
+             </motion.div>
+             <motion.div style={{ opacity: fingerOpacity }} className="absolute flex items-center justify-center text-primary">
+               <FingerprintIcon />
+             </motion.div>
+          </div>
+        </LiquidButton>
+      </motion.div>
     </div>
   );
 }
 
-export default function IncomingCall({ onAccept }) {
+export default function IncomingCall({ onPick }) {
   const { caller } = content.event;
-  // Un timer de rappel peut être en vol au démontage : il faut pouvoir l'annuler.
-  const recallTimer = useRef(null);
 
   useEffect(() => {
     startRingtone();
@@ -115,30 +116,21 @@ export default function IncomingCall({ onAccept }) {
 
     return () => {
       clearInterval(buzz);
-      clearTimeout(recallTimer.current);
       stopRingtone();
       haptic(0);
     };
   }, []);
 
-  const handleAccept = () => {
+  /**
+   * Les deux glyphes mènent au même plongeon, avec une destination différente.
+   * Plus de refus : l'écran n'est plus un appel à accepter mais le carrefour du
+   * récit, donc il n'y a pas de sortie « non ».
+   */
+  const pick = (universe) => {
     stopRingtone();
     haptic(HAPTIC.impact);
-    onAccept();
-  };
-
-  /**
-   * Refuser coupe la sonnerie puis rappelle. Le bouton doit exister pour que
-   * l'écran soit crédible, mais il ne peut pas être une sortie définitive.
-   */
-  const handleDecline = () => {
-    stopRingtone();
-    haptic(HAPTIC.soft);
     playClick();
-    recallTimer.current = setTimeout(() => {
-      startRingtone();
-      haptic(HAPTIC.ring);
-    }, 2600);
+    onPick(universe);
   };
 
   return (
@@ -209,22 +201,12 @@ export default function IncomingCall({ onAccept }) {
 
         {/* Actions */}
         <motion.div
-          className="flex flex-col items-center w-full px-8 pb-safe"
+          className="flex flex-col items-center w-full px-8 pb-safe mb-[8vh]"
           initial={{ opacity: 0, y: 26 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.34, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="flex justify-center gap-[74px] mb-11">
-            <SecondaryAction icon={<RemindIcon />} label="Rappel" onClick={handleDecline} />
-            <SecondaryAction icon={<MessageIcon />} label="Message" onClick={handleDecline} />
-          </div>
-
-          <div className="flex justify-center gap-[96px] mb-7">
-            <CallButton variant="decline" label="Refuser" onClick={handleDecline} />
-            <CallButton variant="accept" label="Accepter" onClick={handleAccept} pulse />
-          </div>
-
-          <div className="w-[135px] h-[5px] rounded-full bg-white/70 mb-1" />
+          <SlideAction onPick={pick} />
         </motion.div>
       </div>
     </motion.div>

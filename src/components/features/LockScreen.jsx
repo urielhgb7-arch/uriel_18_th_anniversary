@@ -36,6 +36,23 @@ function Wallpaper() {
         className="absolute bottom-[8%] -right-[18%] w-[75%] h-[45%] rounded-full"
         style={{ background: 'radial-gradient(circle,rgba(142,120,104,0.2),transparent 68%)', filter: 'blur(60px)' }}
       />
+
+      {/* Halo irisé — la nacre annoncée, mais posée SUR le sombre au lieu de
+          remplacer le fond : un lock screen clair suivi d'un site noir ferait
+          une rupture que le récit ne rattrape pas. En plus-lighter, donc il
+          n'éclaircit que ce qui est déjà lumineux. Dérive de 18 s. */}
+      <div
+        className="absolute left-[-10%] top-[6%] w-[120%] h-[58%] pointer-events-none"
+        style={{
+          background:
+            'conic-gradient(from 210deg at 42% 38%, rgba(168,196,255,0.30), rgba(214,178,255,0.24) 22%, rgba(255,198,214,0.20) 40%, rgba(196,235,222,0.24) 62%, rgba(168,196,255,0.30) 100%)',
+          filter: 'blur(58px) saturate(150%)',
+          mixBlendMode: 'plus-lighter',
+          maskImage: 'radial-gradient(ellipse at 50% 42%, #000 0%, transparent 72%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at 50% 42%, #000 0%, transparent 72%)',
+          animation: 'iris-drift 18s ease-in-out infinite',
+        }}
+      />
       {/* Grain léger : casse le banding des dégradés sur écran OLED. */}
       <div
         className="absolute inset-0 opacity-[0.035] mix-blend-overlay"
@@ -76,16 +93,19 @@ const CameraIcon = () => (
   </svg>
 );
 
+import { LiquidButton } from '../ui/liquid-glass-button';
+
 /** Pastille ronde translucide du bas de l'écran verrouillé. */
 function QuickAction({ children, label }) {
   return (
-    <div
-      className="w-11 h-11 rounded-full flex items-center justify-center glass-ios"
-      role="img"
+    <LiquidButton
+      variant="default"
+      size="icon"
+      className="w-14 h-14 rounded-full p-0 flex items-center justify-center text-white/95"
       aria-label={label}
     >
       {children}
-    </div>
+    </LiquidButton>
   );
 }
 
@@ -147,20 +167,40 @@ export default function LockScreen({ onUnlock }) {
             {date.charAt(0).toUpperCase() + date.slice(1)}
           </p>
 
-          {/* Poids 200 + tabular-nums : le rendu exact de l'heure iOS. */}
-          <p
-            className="text-white leading-[0.92] mt-1"
-            style={{
-              fontFamily: 'var(--font-ios)',
-              fontSize: 'clamp(76px, 23vw, 112px)',
-              fontWeight: 200,
-              letterSpacing: '-0.035em',
-              fontVariantNumeric: 'tabular-nums',
-              textShadow: '0 2px 30px rgba(0,0,0,0.35)',
-            }}
-          >
-            {time}
-          </p>
+          {/* Poids 200 + tabular-nums : le rendu exact de l'heure iOS.
+              Le verre vient d'une plaque à backdrop-filter posée DERRIÈRE les
+              chiffres et fondue par un masque radial — donc sans bord visible.
+              Choix assumé : pas de masque SVG texte, dont les métriques
+              dépendraient de la police locale et se décaleraient d'un appareil
+              à l'autre. Les chiffres, eux, restent légèrement translucides pour
+              laisser l'irisation passer à travers. */}
+          <div className="relative mt-1">
+            <div
+              className="absolute -inset-x-8 -inset-y-4 pointer-events-none"
+              style={{
+                backdropFilter: 'url("#container-glass")',
+                WebkitBackdropFilter: 'url("#container-glass")',
+                maskImage: 'radial-gradient(ellipse at 50% 50%, #000 32%, transparent 74%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at 50% 50%, #000 32%, transparent 74%)',
+              }}
+            />
+            <p
+              className="relative leading-[0.92]"
+              style={{
+                fontFamily: 'var(--font-ios)',
+                fontSize: 'clamp(76px, 23vw, 112px)',
+                fontWeight: 200,
+                letterSpacing: '-0.035em',
+                fontVariantNumeric: 'tabular-nums',
+                color: 'rgba(255,255,255,0.93)',
+                WebkitTextStroke: '0.4px rgba(255,255,255,0.14)',
+                textShadow:
+                  '0 -1px 0 rgba(255,255,255,0.22), 0 2px 30px rgba(0,0,0,0.42), 0 0 42px rgba(190,205,255,0.13)',
+              }}
+            >
+              {time}
+            </p>
+          </div>
         </motion.div>
 
         <div className="flex-1" />

@@ -28,13 +28,8 @@ function formatDate(iso) {
 function Detail({ label, value }) {
   return (
     <div className="flex flex-col gap-1">
-      <span
-        className="text-white/35 text-[9px] uppercase tracking-[0.3em]"
-        style={{ fontFamily: 'var(--font-mono)' }}
-      >
-        {label}
-      </span>
-      <span className="text-white/90 text-[15px]">{value}</span>
+      <span className="label-mono">{label}</span>
+      <span className="text-ink/90 text-[15px]">{value}</span>
     </div>
   );
 }
@@ -60,7 +55,7 @@ export default function FinalCTA({ unlocked = false }) {
             transition={{ duration: 0.5 }}
           >
             <motion.div
-              className="w-12 h-12 rounded-full border border-white/15 flex items-center justify-center"
+              className="w-12 h-12 rounded-full border border-ink/15 flex items-center justify-center"
               animate={{ opacity: [0.35, 1, 0.35] }}
               transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
             >
@@ -69,13 +64,8 @@ export default function FinalCTA({ unlocked = false }) {
                 <path d="M8 11V8a4 4 0 0 1 8 0v3" />
               </svg>
             </motion.div>
-            <p
-              className="text-white/40 text-[10px] uppercase tracking-[0.34em]"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            >
-              Invitation scellée
-            </p>
-            <p className="text-white/25 text-[13px] max-w-[240px]">
+            <p className="label-mono">Invitation scellée</p>
+            <p className="text-faint text-[13px] max-w-[240px]">
               Le gantelet doit d'abord être utilisé.
             </p>
           </motion.div>
@@ -91,28 +81,26 @@ export default function FinalCTA({ unlocked = false }) {
               className="absolute -inset-16 pointer-events-none"
               style={{
                 background:
-                  'radial-gradient(circle at 50% 45%, rgba(139,92,246,0.28) 0%, rgba(14,165,233,0.1) 38%, transparent 70%)',
+                  'radial-gradient(circle at 50% 45%, rgba(201,168,106,0.2) 0%, transparent 68%)',
               }}
             />
 
             <div className="relative glass-nexus rounded-[28px] p-7 overflow-hidden">
-              <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-vibranium to-transparent" />
+              <div
+                className="absolute top-0 left-8 right-8 h-px"
+                style={{
+                  background:
+                    'linear-gradient(90deg,transparent,rgba(201,168,106,0.8),transparent)',
+                }}
+              />
 
-              <p
-                className="text-infinity/80 text-[9px] uppercase tracking-[0.36em] mb-5"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                Invitation · 001
-              </p>
+              <p className="label-mono mb-5 tabular-nums">Invitation · 001</p>
 
-              <h2
-                className="text-white text-[clamp(28px,8.5vw,38px)] font-extrabold uppercase leading-[0.95] tracking-tight mb-4"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
+              <h2 className="text-ink text-[clamp(29px,8.5vw,39px)] leading-[1.0] mb-4">
                 {finalMessage.title}
               </h2>
 
-              <p className="text-white/60 text-[14px] leading-relaxed mb-8">
+              <p className="text-ink/62 text-[14px] leading-relaxed mb-8">
                 {finalMessage.subtitle}
               </p>
 
@@ -131,14 +119,18 @@ export default function FinalCTA({ unlocked = false }) {
                   playWhoosh();
                   haptic(HAPTIC.impact);
                 }}
-                className="group relative flex items-center justify-center gap-3 w-full h-14 rounded-2xl overflow-hidden
-                           text-white font-semibold text-[16px] transition-transform active:scale-[0.98]"
-                style={{ background: 'linear-gradient(120deg, #8b5cf6 0%, #0ea5e9 100%)' }}
+                className="group relative flex items-center justify-center gap-3 w-full h-14 rounded-2xl
+                           overflow-hidden text-void text-[16px] transition-transform active:scale-[0.98]"
+                style={{
+                  background: 'var(--color-accent)',
+                  fontWeight: 500,
+                  boxShadow: '0 14px 40px -12px rgba(201,168,106,0.6)',
+                }}
               >
                 {/* Reflet qui traverse le bouton : attire l'œil vers la seule action. */}
                 <motion.span
                   className="absolute inset-y-0 w-1/3 pointer-events-none"
-                  style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)' }}
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)' }}
                   animate={{ x: ['-140%', '380%'] }}
                   transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.6, ease: 'easeInOut' }}
                 />
@@ -149,7 +141,7 @@ export default function FinalCTA({ unlocked = false }) {
                 <span className="relative">Confirmer ma présence</span>
               </a>
 
-              <p className="text-center text-white/25 text-[11px] mt-4">
+              <p className="text-center text-faint text-[11px] mt-4">
                 Réponse par WhatsApp · {event.title}
               </p>
             </div>

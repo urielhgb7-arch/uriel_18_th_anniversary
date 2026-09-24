@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Navigation, Sparkles, ArrowLeft } from 'lucide-react';
+import { Navigation, Sparkles } from 'lucide-react';
 import content from '../../content.json';
 import { FLYBY_LABELS } from '../../lib/geo';
 import { useReducedMotion, usePerfTier, useTilt } from '../../lib/hooks';
@@ -57,7 +57,7 @@ function openNavigation(lat, lng) {
 }
 
 /** Cadre HUD : coins tracés en CSS, aucun asset. */
-function HudFrame({ color = '#0ea5e9' }) {
+function HudFrame({ color = 'rgba(201,168,106,0.55)' }) {
   return (
     <div className="absolute inset-0 pointer-events-none z-20" style={{ color }}>
       {[
@@ -88,7 +88,10 @@ function Telemetry({ lat, lng, progress }) {
   const dLat = lat + noise(progress + 0.3) * jitter;
   const dLng = lng + noise(progress + 7.7) * jitter;
   return (
-    <div className="text-[11px] leading-relaxed tracking-[0.18em] text-stark/85" style={{ fontFamily: 'var(--font-mono)' }}>
+    <div
+      className="text-[11px] leading-relaxed text-muted tabular-nums"
+      style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}
+    >
       <p>{formatCoord(dLat, 'lat')}</p>
       <p>{formatCoord(dLng, 'lng')}</p>
     </div>
@@ -165,9 +168,7 @@ function GlobeStage({ lat, lng, onArrive, tilt, reduced, tier }) {
 
       {failed && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-white/45 text-xs tracking-[0.3em] uppercase" style={{ fontFamily: 'var(--font-mono)' }}>
-            Acquisition satellite…
-          </p>
+          <p className="label-mono">Acquisition satellite…</p>
         </div>
       )}
 
@@ -178,18 +179,19 @@ function GlobeStage({ lat, lng, onArrive, tilt, reduced, tier }) {
           <div>
             <div className="flex items-center gap-2">
               <motion.span
-                className="w-1.5 h-1.5 rounded-full bg-alert"
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: 'var(--color-accent)' }}
                 animate={{ opacity: [1, 0.2, 1] }}
                 transition={{ duration: 1.1, repeat: Infinity }}
               />
-              <span className="text-[10px] tracking-[0.3em] uppercase text-alert font-bold" style={{ fontFamily: 'var(--font-mono)' }}>
+              <span className="label-mono" style={{ color: 'var(--color-accent)' }}>
                 Triangulation
               </span>
             </div>
             <AnimatePresence mode="wait">
               <motion.p
                 key={phase}
-                className="text-white text-xl mt-1.5 font-bold"
+                className="text-ink text-xl mt-1.5"
                 style={{ fontFamily: 'var(--font-display)' }}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -209,17 +211,18 @@ function GlobeStage({ lat, lng, onArrive, tilt, reduced, tier }) {
       {/* Barre de progression du vol : donne une fin visible à l'attente. */}
       <div className="absolute bottom-0 left-0 right-0 pb-safe px-6 z-20 pointer-events-none">
         <div className="mb-6">
-          <div className="h-px w-full bg-white/10 overflow-hidden">
+          <div className="h-px w-full bg-ink/10 overflow-hidden">
             <motion.div
-              className="h-full bg-stark"
-              style={{ boxShadow: '0 0 8px #0ea5e9' }}
+              className="h-full"
+              style={{
+                background: 'var(--color-accent)',
+                boxShadow: '0 0 8px rgba(201,168,106,0.7)',
+              }}
               animate={{ width: `${progress * 100}%` }}
               transition={{ ease: 'linear', duration: 0.12 }}
             />
           </div>
-          <p className="text-[9px] tracking-[0.36em] uppercase text-white/35 mt-2" style={{ fontFamily: 'var(--font-mono)' }}>
-            Descente orbitale
-          </p>
+          <p className="label-mono mt-2">Descente orbitale</p>
         </div>
       </div>
     </div>
@@ -296,29 +299,25 @@ function GroundStage({ lat, lng, name, venue, onSwitch }) {
 
   return (
     <motion.div
-      className="absolute inset-0 bg-[#050a10]"
+      className="absolute inset-0 bg-void"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1.1 }}
     >
-      {/* Filtre : transforme les tuiles OSM claires en carte tactique sombre. */}
+      {/* Filtre : transforme les tuiles OSM claires en carte sombre quasi
+          monochrome. `saturate(0.25)` au lieu d'un virage de teinte : on ne veut
+          pas d'une seconde couleur qui concurrence l'or du bouton. */}
       <div
         ref={holder}
         className="absolute inset-0 z-0"
-        style={{ filter: 'invert(1) hue-rotate(188deg) brightness(0.82) contrast(1.35) saturate(1.5)' }}
+        style={{ filter: 'invert(1) grayscale(0.82) brightness(0.8) contrast(1.2) saturate(0.25)' }}
       />
 
-      {/* Lignes de scan : ancre la carte dans l'esthétique HUD du reste. */}
-      <div
-        className="absolute inset-0 z-10 pointer-events-none opacity-[0.12]"
-        style={{
-          background: 'repeating-linear-gradient(0deg,transparent,transparent 2px,#0ea5e9 2px,#0ea5e9 3px)',
-          mixBlendMode: 'overlay',
-        }}
-      />
+      {/* Vignette seule. Les lignes de scan ont sauté : elles ajoutaient du
+          bruit sur la seule zone que l'invité doit pouvoir lire. */}
       <div
         className="absolute inset-0 z-10 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at center,transparent 38%,rgba(5,10,16,0.82) 100%)' }}
+        style={{ background: 'radial-gradient(ellipse at center,transparent 42%,rgba(6,6,10,0.86) 100%)' }}
       />
 
       <HudFrame />
@@ -326,28 +325,21 @@ function GroundStage({ lat, lng, name, venue, onSwitch }) {
       <AnimatePresence>
         {ready && (
           <>
+            {/* Carte flottante : le seul endroit où le verre sert vraiment —
+                il faut lire du texte par-dessus des tuiles imprévisibles. */}
             <motion.div
-              className="absolute top-0 left-0 right-0 z-30 px-6 pt-safe pointer-events-none"
+              className="absolute top-0 left-0 right-0 z-30 px-4 pt-safe pointer-events-none"
               initial={{ opacity: 0, y: -18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="flex items-start justify-between mt-4">
+              <div className="glass-nexus rounded-3xl px-5 py-4 flex items-start justify-between mt-3 gap-4">
                 <div>
-                  <span className="text-[10px] tracking-[0.3em] uppercase font-bold text-alert" style={{ fontFamily: 'var(--font-mono)' }}>
-                    Cible verrouillée
-                  </span>
-                  <h1
-                    className="text-white text-[34px] leading-none font-bold uppercase mt-1"
-                    style={{ fontFamily: 'var(--font-display)', textShadow: '0 0 22px rgba(14,165,233,0.45)' }}
-                  >
-                    {name}
-                  </h1>
-                  <p className="text-stark/70 text-xs tracking-[0.2em] uppercase mt-1.5" style={{ fontFamily: 'var(--font-mono)' }}>
-                    {venue}
-                  </p>
+                  <span className="label-mono">Le lieu</span>
+                  <h1 className="text-ink text-[35px] leading-[1.02] mt-1.5">{name}</h1>
+                  <p className="text-muted text-[13px] mt-1.5">{venue}</p>
                 </div>
-                <div className="text-right mt-1">
+                <div className="text-right mt-1 shrink-0">
                   <Telemetry lat={lat} lng={lng} progress={1} />
                 </div>
               </div>
@@ -357,35 +349,50 @@ function GroundStage({ lat, lng, name, venue, onSwitch }) {
               className="absolute bottom-0 left-0 right-0 z-30 px-5 pb-safe"
               initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="glass-nexus rounded-3xl p-4 mb-3 relative overflow-hidden">
-                <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-stark to-transparent opacity-60" />
-                <motion.button
-                  onClick={() => {
-                    haptic(HAPTIC.impact);
-                    openNavigation(lat, lng);
-                  }}
-                  className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-black text-[13px] uppercase tracking-[0.18em]"
-                  style={{ background: '#0ea5e9', boxShadow: '0 0 26px rgba(14,165,233,0.38)', fontFamily: 'var(--font-mono)' }}
-                  whileTap={{ scale: 0.975 }}
-                >
-                  <Navigation size={17} />
-                  Lancer l'itinéraire
-                </motion.button>
-              </div>
+              {/* UNE seule action primaire, et c'est le seul élément en haut
+                  contraste de l'écran : fond or plein, texte presque noir, sur
+                  une carte devenue quasi monochrome. Tout le reste est en
+                  retrait. Le but est qu'on sache où cliquer pour venir sans
+                  avoir à chercher.
 
+                  Le verre a disparu autour du bouton : une plaque translucide
+                  derrière le seul élément plein ne servait qu'à en diluer le
+                  contraste. Il ne reste du glassmorphism que là où il porte de
+                  l'information — la carte flottante en haut. */}
+              <motion.button
+                onClick={() => {
+                  haptic(HAPTIC.impact);
+                  openNavigation(lat, lng);
+                }}
+                className="w-full flex items-center justify-center gap-3 py-[19px] rounded-2xl text-[14px] text-void"
+                style={{
+                  background: 'var(--color-accent)',
+                  boxShadow: '0 14px 40px -10px rgba(201,168,106,0.55)',
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 500,
+                  letterSpacing: '0.01em',
+                }}
+                whileTap={{ scale: 0.975 }}
+              >
+                <Navigation size={18} />
+                Lancer l'itinéraire
+              </motion.button>
+
+              {/* Action secondaire : volontairement basse en contraste, petite,
+                  et sans fond. Elle ne doit jamais entrer en concurrence avec
+                  celle du dessus. */}
               <button
                 onClick={() => {
                   playWhoosh();
                   haptic(HAPTIC.soft);
                   onSwitch();
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 text-[11px] uppercase tracking-[0.22em] text-white/45 active:text-white transition-colors"
-                style={{ fontFamily: 'var(--font-mono)' }}
+                className="label-mono w-full flex items-center justify-center gap-2 py-4 mt-1 active:text-ink transition-colors"
               >
-                <Sparkles size={13} />
-                Explorer l'autre univers
+                <Sparkles size={12} />
+                Me connaître
               </button>
             </motion.div>
           </>
@@ -395,7 +402,7 @@ function GroundStage({ lat, lng, name, venue, onSwitch }) {
   );
 }
 
-export default function UniverseMap({ onSwitch, onBack }) {
+export default function UniverseMap({ onSwitch }) {
   const { lat, lng, name, venue } = content.event.location;
   const [stage, setStage] = useState('GLOBE');
   const reduced = useReducedMotion();
@@ -426,18 +433,6 @@ export default function UniverseMap({ onSwitch, onBack }) {
           <GroundStage key="ground" lat={lat} lng={lng} name={name} venue={venue} onSwitch={onSwitch} />
         )}
       </AnimatePresence>
-
-      {/* Retour au hub : discret, toujours disponible. */}
-      <button
-        onClick={() => {
-          playWhoosh();
-          onBack();
-        }}
-        className="absolute z-40 left-4 bottom-[calc(var(--safe-b)+1rem)] w-10 h-10 rounded-full glass-nexus flex items-center justify-center text-white/60 active:text-white"
-        aria-label="Retour au nexus"
-      >
-        <ArrowLeft size={17} />
-      </button>
     </div>
   );
 }

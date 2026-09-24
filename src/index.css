@@ -1,36 +1,41 @@
 @import "tailwindcss";
+@import "./fonts.css";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    DESIGN TOKENS
-   Deux mondes : "REAL" (iOS natif, neutre) et "NEXUS" (multivers, saturé).
+   Discipline calquée sur why.zero.university (valeurs mesurées sur la page
+   vivante, pas déduites du CSS) :
+     · tracking 0 sur tout ce qui est grand — le tracking large est le tell nº1
+       du texte « généré ». 0.12em uniquement sur les petits labels mono ≤12px.
+     · weight max 700.
+     · zéro texte en dégradé.
+     · un seul easing.
    ───────────────────────────────────────────────────────────────────────────── */
 @theme {
-  /* Nexus palette */
-  --color-void: #05020a;
-  --color-abyss: #0a0514;
-  --color-tchalla: #1b0b2e;
-  --color-vibranium: #8b5cf6;
-  --color-stark: #0ea5e9;
-  --color-infinity: #d4af37;
-  --color-doom: #10b981;
-  --color-alert: #ef4444;
+  /* Base quasi-monochrome : 5 valeurs sourdes, du vide, un seul accent. */
+  --color-void: #06060a;
+  --color-abyss: #0b0b11;
+  --color-surface: #14141b;
+  --color-ink: #f2f2f0;
+  --color-muted: #8a8a86;
+  --color-faint: #55555f;
 
-  /* iOS real-world palette */
-  --color-ios-green: #34c759;
-  --color-ios-red: #ff3b30;
+  /* L'accent unique. Or sourd : relie le gant au reste sans saturer. */
+  --color-accent: #c9a86a;
+  --color-accent-dim: #6d5c3c;
+
+  /* iOS réel : conservé pour le lock screen. Sur iPhone c'est SF Pro, donc la
+     fidélité maximale ; ailleurs on retombe sur Supreme, pas sur Inter. */
   --color-ios-gray: #8e8e93;
+  --font-ios: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Supreme', sans-serif;
 
-  /* Typographie */
-  --font-display: 'Syne', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
-  /* La pile système réelle : sert l'illusion iOS (SF Pro sur iPhone). */
-  --font-ios: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Inter', sans-serif;
+  /* Combo C — Fontshare, auto-hébergé (licence ITF Free, usage commercial). */
+  --font-display: 'Sentient', ui-serif, Georgia, serif;
+  --font-sans: 'Supreme', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Azeret Mono', ui-monospace, 'SF Mono', monospace;
 
-  /* Easings cinématiques */
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-expo: cubic-bezier(0.7, 0, 0.84, 0);
-  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Un seul easing, celui du site de référence. */
+  --ease-signature: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
@@ -55,25 +60,24 @@
   body {
     @apply text-white antialiased;
     font-family: var(--font-sans);
+    font-weight: 400;
     min-height: 100dvh;
     overflow: hidden;
-  }
-
-  /* Aucune sélection accidentelle pendant les drags / swipes. */
-  body {
     -webkit-user-select: none;
     user-select: none;
   }
 
+  /* Le serif porte les titres. Tracking 0 : mesuré à 0 sur la référence pour
+     tout ce qui dépasse ~20px. Un très léger négatif seulement en très grand. */
   h1,
   h2,
   h3 {
     font-family: var(--font-display);
-    letter-spacing: -0.035em;
+    font-weight: 400;
+    letter-spacing: 0;
     margin: 0;
   }
 
-  /* Masque les scrollbars sans casser le scroll. */
   .no-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -96,14 +100,27 @@
     padding-bottom: calc(var(--safe-b) + 0.5rem);
   }
 
+  /* Petit label mono en capitales : LE seul endroit où le tracking a le droit
+     de monter, et plafonné à 0.12em comme sur la référence. */
+  .label-mono {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* Glass sobre : une seule variante pour tout le multivers, sans teinte
+     violette. Le glassmorphisme ne sert que là où il porte une information. */
   .glass-nexus {
-    background: rgba(20, 10, 40, 0.55);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border: 1px solid rgba(139, 92, 246, 0.28);
+    background: rgba(14, 14, 21, 0.62);
+    backdrop-filter: saturate(120%) blur(14px);
+    -webkit-backdrop-filter: saturate(120%) blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow:
-      0 24px 60px -20px rgba(0, 0, 0, 0.8),
-      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      0 24px 60px -24px rgba(0, 0, 0, 0.85),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   /* Glassmorphism iOS : très clair, très flou, faible saturation. */
@@ -112,13 +129,6 @@
     backdrop-filter: blur(28px) saturate(130%);
     -webkit-backdrop-filter: blur(28px) saturate(130%);
     border: 1px solid rgba(255, 255, 255, 0.16);
-  }
-
-  .text-nexus-gradient {
-    background: linear-gradient(120deg, #fff 0%, #c4b5fd 45%, #7dd3fc 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
   }
 
   .hud-corner {
@@ -148,17 +158,22 @@
   }
 }
 
-@keyframes nexus-breathe {
+/* Halo irisé du lock screen : une dérive très lente, presque imperceptible.
+   L'irisation reste sur le fond sombre — la bascule en clair appartient à
+   l'effondrement, pas à la porte d'entrée. */
+@keyframes iris-drift {
   0%,
   100% {
-    opacity: 0.45;
+    transform: translate3d(-4%, 0, 0) scale(1);
+    opacity: 0.5;
   }
   50% {
-    opacity: 1;
+    transform: translate3d(4%, -2%, 0) scale(1.08);
+    opacity: 0.78;
   }
 }
 
-/* ── Marqueur Leaflet ──────────────────────────────────────────────────────────
+/* ── Marqueur de carte ─────────────────────────────────────────────────────────
    Injecté en HTML brut dans une divIcon, donc hors de portée de Tailwind :
    ces classes doivent exister en CSS global. */
 .nx-pin {
@@ -176,7 +191,7 @@
 }
 .nx-pin-ring {
   inset: 0;
-  border: 1px solid #0ea5e9;
+  border: 1px solid var(--color-accent);
   animation: nexus-ping 2.2s ease-out infinite;
 }
 .nx-pin-ring--late {
@@ -184,31 +199,14 @@
 }
 .nx-pin-cross {
   inset: 18px;
-  border: 1.5px dashed rgba(239, 68, 68, 0.9);
-  animation: nexus-spin 5s linear infinite;
+  border: 1px dashed rgba(201, 168, 106, 0.55);
+  animation: nexus-spin 9s linear infinite;
 }
 .nx-pin-core {
   width: 8px;
   height: 8px;
-  background: #ef4444;
-  box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.85);
-}
-
-/* Attribution OSM : obligatoire, mais elle doit se fondre dans le HUD.
-   Le filtre d'inversion de la carte s'applique aussi à elle, d'où les
-   couleurs inversées volontairement. */
-.leaflet-container {
-  background: #050a10;
-  font-family: var(--font-mono);
-}
-.leaflet-control-attribution {
-  background: rgba(255, 255, 255, 0.72) !important;
-  color: #222 !important;
-  font-size: 9px !important;
-  padding: 1px 5px !important;
-}
-.leaflet-control-attribution a {
-  color: #333 !important;
+  background: var(--color-ink);
+  box-shadow: 0 0 12px 2px rgba(201, 168, 106, 0.8);
 }
 
 /* Respect strict de prefers-reduced-motion : on neutralise tout mouvement. */

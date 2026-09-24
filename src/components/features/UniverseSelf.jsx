@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
-import { Activity, Film, Music, Rocket, PenTool, Cpu, Sparkles, ArrowLeft, Map } from 'lucide-react';
+import { Activity, Film, Music, Rocket, PenTool, Cpu, Sparkles, Map } from 'lucide-react';
 import content from '../../content.json';
 import { mountNebula } from '../../lib/nebula';
 import { useReducedMotion, usePerfTier, useTilt } from '../../lib/hooks';
-import { startDrone, stopDrone, playWhoosh, playClick, haptic, HAPTIC } from '../../lib/audio';
+import { startDrone, stopDrone, playClick, haptic, HAPTIC } from '../../lib/audio';
 import Enigmas from './Enigmas';
 import Gauntlet from './Gauntlet';
 import FinalCTA from './FinalCTA';
@@ -31,7 +31,10 @@ const ICONS = {
   cpu: Cpu,
 };
 
-const FRAGMENT_HUES = ['#3b82f6', '#eab308', '#ef4444', '#a855f7', '#22c55e', '#f97316'];
+/* Mêmes teintes que les six pierres (cf. lib/gauntlet.js) : un fragment est la
+   face lisible d'une pierre, la correspondance doit être immédiate. Désaturées
+   d'un cran — la chroma est réservée aux pierres elles-mêmes. */
+const FRAGMENT_HUES = ['#5b8fd4', '#d6b64a', '#d45b52', '#9068c4', '#4fae74', '#d98a4a'];
 
 /**
  * Expose l'inclinaison sous forme de MotionValues.
@@ -123,9 +126,9 @@ function FragmentCard({ passion, index, total, hue, Icon, shine }) {
     <div
       className="relative rounded-[28px] p-8 overflow-hidden"
       style={{
-        background: 'linear-gradient(155deg, rgba(28,16,52,0.88), rgba(8,4,18,0.94))',
-        border: `1px solid ${hue}44`,
-        boxShadow: `0 30px 80px -24px ${hue}55, inset 0 1px 0 rgba(255,255,255,0.08)`,
+        background: 'linear-gradient(155deg, rgba(20,20,27,0.9), rgba(6,6,10,0.95))',
+        border: `1px solid ${hue}33`,
+        boxShadow: `0 30px 80px -26px ${hue}3d, inset 0 1px 0 rgba(255,255,255,0.06)`,
         backdropFilter: 'blur(18px)',
       }}
     >
@@ -152,22 +155,14 @@ function FragmentCard({ passion, index, total, hue, Icon, shine }) {
           <Icon size={24} color={hue} className="relative" />
         </div>
 
-        <span
-          className="text-[10px] tracking-[0.3em] text-white/30"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
+        <span className="label-mono tabular-nums">
           {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
         </span>
       </div>
 
-      <h3
-        className="text-white text-[30px] leading-[1.05] font-bold uppercase mb-3"
-        style={{ fontFamily: 'var(--font-display)', textShadow: `0 0 28px ${hue}44` }}
-      >
-        {passion.name}
-      </h3>
+      <h3 className="text-ink text-[31px] leading-[1.05] mb-3">{passion.name}</h3>
 
-      <p className="text-white/62 text-[14px] leading-relaxed">{passion.desc}</p>
+      <p className="text-ink/65 text-[14px] leading-relaxed">{passion.desc}</p>
 
       {/* Barre d'accent : rappel discret de la couleur du fragment. */}
       <div className="mt-7 flex items-center gap-2">
@@ -178,28 +173,31 @@ function FragmentCard({ passion, index, total, hue, Icon, shine }) {
   );
 }
 
-/** Titre d'ouverture de l'univers. */
+/**
+ * Seuil d'entrée. Court par construction : le gantelet est juste en dessous, et
+ * c'est lui qu'on doit voir presque tout de suite. 62dvh laisse l'amorce du
+ * canvas dépasser en bas du premier écran — l'invité sait qu'il y a quelque
+ * chose à atteindre sans qu'on ait besoin de le lui dire.
+ */
 function SelfIntro() {
   return (
-    <section className="relative h-[100dvh] flex flex-col items-center justify-center px-8 text-center">
+    <section className="relative h-[62dvh] flex flex-col items-center justify-center px-8 text-center">
       <motion.p
-        className="text-vibranium text-[10px] tracking-[0.42em] uppercase font-bold mb-5"
-        style={{ fontFamily: 'var(--font-mono)' }}
+        className="label-mono mb-5"
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8 }}
       >
-        Nexus — Archive personnelle
+        Archive personnelle
       </motion.p>
 
       <motion.h1
-        className="text-[clamp(44px,13vw,68px)] leading-[0.9] font-bold uppercase text-nexus-gradient"
-        style={{ fontFamily: 'var(--font-display)' }}
+        className="text-ink text-[clamp(44px,13vw,66px)] leading-[0.92]"
         initial={{ opacity: 0, y: 22, filter: 'blur(14px)' }}
         whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         viewport={{ once: true }}
-        transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
       >
         Me
         <br />
@@ -207,25 +205,14 @@ function SelfIntro() {
       </motion.h1>
 
       <motion.p
-        className="text-white/50 text-[14px] mt-6 max-w-[290px] leading-relaxed"
+        className="text-muted text-[14px] mt-6 max-w-[290px] leading-relaxed"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ delay: 0.45, duration: 0.9 }}
       >
-        Six fragments dérivent dans ce vide. Descendez pour les traverser.
+        Six pierres sur des lignes de temps divergentes. Chacune en dit une part.
       </motion.p>
-
-      <motion.div
-        className="absolute bottom-[calc(var(--safe-b)+2.5rem)] flex flex-col items-center gap-2"
-        animate={{ opacity: [0.3, 0.9, 0.3], y: [0, 7, 0] }}
-        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-      >
-        <span className="text-[9px] tracking-[0.34em] uppercase text-white/45" style={{ fontFamily: 'var(--font-mono)' }}>
-          Défiler
-        </span>
-        <span className="w-px h-8 bg-gradient-to-b from-vibranium to-transparent" />
-      </motion.div>
     </section>
   );
 }
@@ -243,10 +230,10 @@ function ScrollRail({ progress, count }) {
           <motion.span
             key={i}
             className="w-[3px] rounded-full"
-            style={{ background: active ? '#8b5cf6' : 'rgba(255,255,255,0.12)' }}
+            style={{ background: active ? 'var(--color-accent)' : 'rgba(255,255,255,0.12)' }}
             animate={{
               height: active ? 22 : 7,
-              boxShadow: active ? '0 0 9px #8b5cf6' : 'none',
+              boxShadow: active ? '0 0 9px rgba(201,168,106,0.8)' : 'none',
             }}
             transition={{ duration: 0.3 }}
           />
@@ -256,9 +243,9 @@ function ScrollRail({ progress, count }) {
   );
 }
 
-export default function UniverseSelf({ onSwitch, onBack }) {
+export default function UniverseSelf({ onSwitch }) {
   const scroller = useRef(null);
-  const ctaRef = useRef(null);
+  const fragmentsRef = useRef(null);
   const nebulaCanvas = useRef(null);
   // Progression brute, lue par la nébuleuse sans passer par React.
   const scrollRatio = useRef(0);
@@ -271,7 +258,7 @@ export default function UniverseSelf({ onSwitch, onBack }) {
   const { mx, my } = useTiltMotion(tilt, !reduced);
 
   const { passions } = content;
-  const SECTIONS = passions.length + 4; // intro + fragments + énigmes + snap + cta
+  const SECTIONS = passions.length + 4; // seuil + gantelet + fragments + énigmes + cta
 
   useEffect(() => {
     startDrone(48);
@@ -306,11 +293,19 @@ export default function UniverseSelf({ onSwitch, onBack }) {
     };
   }, []);
 
-  /** Après le snap, on amène le visiteur au CTA sans bloquer son scroll. */
+  /* Le snap déverrouille le CTA mais n'y saute plus : le gantelet est désormais
+     en haut, donc tout le contenu est encore à venir. On enchaîne sur les
+     fragments — l'effondrement de la scène débouche sur la suite du récit. */
+  const snapTimer = useRef(0);
+  useEffect(() => () => clearTimeout(snapTimer.current), []);
+
   const handleSnapComplete = () => {
     setSnapped(true);
-    setTimeout(() => {
-      ctaRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+    snapTimer.current = setTimeout(() => {
+      fragmentsRef.current?.scrollIntoView({
+        behavior: reduced ? 'auto' : 'smooth',
+        block: 'start',
+      });
     }, 900);
   };
 
@@ -320,7 +315,7 @@ export default function UniverseSelf({ onSwitch, onBack }) {
       {!reduced && <canvas ref={nebulaCanvas} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />}
       <div
         className="absolute inset-0 z-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 40%,rgba(76,29,149,0.22),transparent 62%)' }}
+        style={{ background: 'radial-gradient(ellipse at 50% 38%,rgba(201,168,106,0.09),transparent 64%)' }}
       />
 
       <ScrollRail progress={railProgress} count={SECTIONS} />
@@ -331,6 +326,16 @@ export default function UniverseSelf({ onSwitch, onBack }) {
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <SelfIntro />
+
+        {/* Le gantelet EN HAUT. C'est la pièce maîtresse de cet univers : la
+            reléguer en fin de scroll revenait à ne jamais la montrer. Les six
+            pierres sont donc la première chose à faire, et ce qu'on y apprend
+            sur moi cadre la lecture de tout ce qui suit. */}
+        <section className="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 py-14">
+          <Gauntlet onComplete={handleSnapComplete} />
+        </section>
+
+        <div ref={fragmentsRef} />
 
         {passions.map((passion, i) => (
           <Fragment
@@ -351,35 +356,21 @@ export default function UniverseSelf({ onSwitch, onBack }) {
           <Enigmas />
         </section>
 
-        {/* Climax : les six pierres puis le claquement. */}
-        <section className="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 py-16">
-          <Gauntlet onComplete={handleSnapComplete} />
-        </section>
-
-        <section ref={ctaRef} className="relative min-h-[100dvh] flex items-center justify-center px-5">
+        <section className="relative min-h-[100dvh] flex items-center justify-center px-5">
           <FinalCTA unlocked={snapped} />
         </section>
       </div>
 
-      {/* Navigation : retour au hub, bascule vers l'autre univers. */}
-      <div className="absolute z-40 left-4 bottom-[calc(var(--safe-b)+1rem)] flex gap-2">
-        <button
-          onClick={() => {
-            playWhoosh();
-            onBack();
-          }}
-          className="w-10 h-10 rounded-full glass-nexus flex items-center justify-center text-white/60 active:text-white"
-          aria-label="Retour au nexus"
-        >
-          <ArrowLeft size={17} />
-        </button>
+      {/* Bascule vers l'autre univers. Plus de « retour » : le hub n'existe
+          plus, les deux univers communiquent directement. */}
+      <div className="absolute z-40 left-4 bottom-[calc(var(--safe-b)+1rem)]">
         <button
           onClick={() => {
             playClick();
             haptic(HAPTIC.soft);
             onSwitch();
           }}
-          className="w-10 h-10 rounded-full glass-nexus flex items-center justify-center text-white/60 active:text-white"
+          className="w-10 h-10 rounded-full glass-nexus flex items-center justify-center text-ink/60 active:text-ink"
           aria-label="Voir la localisation"
         >
           <Map size={17} />

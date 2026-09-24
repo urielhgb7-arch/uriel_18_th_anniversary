@@ -60,13 +60,9 @@ export default function Enigmas() {
   return (
     <div className="w-full max-w-md">
       <div className="text-center mb-8">
-        <p className="text-vibranium text-[10px] tracking-[0.42em] uppercase font-bold mb-2" style={{ fontFamily: 'var(--font-mono)' }}>
-          Contrôle d'accès
-        </p>
-        <h2 className="text-white text-[34px] font-bold uppercase leading-none" style={{ fontFamily: 'var(--font-display)' }}>
-          Déchiffrement
-        </h2>
-        <p className="text-white/45 text-[13px] mt-2.5">Trois questions. Prouve que tu me connais.</p>
+        <p className="label-mono mb-3">Contrôle d'accès</p>
+        <h2 className="text-ink text-[34px] leading-[1.05]">Déchiffrement</h2>
+        <p className="text-muted text-[13px] mt-3">Trois questions. Prouve que tu me connais.</p>
       </div>
 
       <AnimatePresence mode="wait">
@@ -80,16 +76,19 @@ export default function Enigmas() {
             transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
           >
             <motion.div
-              className="absolute left-0 right-0 h-px bg-vibranium/40"
-              style={{ boxShadow: '0 0 9px #8b5cf6' }}
+              className="absolute left-0 right-0 h-px"
+              style={{
+                background: 'rgba(201,168,106,0.4)',
+                boxShadow: '0 0 9px rgba(201,168,106,0.8)',
+              }}
               animate={{ top: ['0%', '100%'] }}
               transition={{ duration: 3.4, repeat: Infinity, ease: 'linear' }}
             />
 
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <ShieldAlert size={15} className="text-vibranium" />
-                <span className="text-[10px] text-vibranium tracking-[0.24em] uppercase" style={{ fontFamily: 'var(--font-mono)' }}>
+                <ShieldAlert size={15} style={{ color: 'var(--color-accent)' }} />
+                <span className="label-mono tabular-nums">
                   Séquence {current + 1}/{enigmas.length}
                 </span>
               </div>
@@ -99,13 +98,13 @@ export default function Enigmas() {
                   <span
                     key={i}
                     className="w-1.5 h-1.5 rounded-full transition-colors"
-                    style={{ background: i <= current ? '#8b5cf6' : 'rgba(255,255,255,0.15)' }}
+                    style={{ background: i <= current ? 'var(--color-accent)' : 'rgba(255,255,255,0.15)' }}
                   />
                 ))}
               </div>
             </div>
 
-            <h3 className="text-white text-[19px] leading-snug font-medium mb-7">{q.question}</h3>
+            <h3 className="text-ink text-[19px] leading-snug mb-7">{q.question}</h3>
 
             <div className="space-y-2.5">
               {q.options.map((opt, i) => {
@@ -113,18 +112,22 @@ export default function Enigmas() {
                 const isAnswer = i === q.answerIndex;
                 const revealed = picked !== null;
 
-                let tone = 'border-vibranium/20 bg-vibranium/[0.06] text-white/80';
+                /* Juste / faux gardent une vraie couleur : c'est de
+                   l'information, pas de la décoration — la retirer rendrait le
+                   résultat illisible. Les deux teintes sont reprises des
+                   pierres (Temps et Réalité) pour rester dans la palette. */
+                let tone = 'border-ink/12 bg-ink/[0.04] text-ink/80';
                 let icon = null;
 
                 if (revealed) {
                   if (isAnswer) {
-                    tone = 'border-doom bg-doom/15 text-doom';
-                    icon = <Check size={17} className="text-doom shrink-0" />;
+                    tone = 'border-[#4fae74] bg-[#4fae74]/12 text-[#7fc99b]';
+                    icon = <Check size={17} className="text-[#7fc99b] shrink-0" />;
                   } else if (isPicked) {
-                    tone = 'border-alert bg-alert/15 text-alert';
-                    icon = <X size={17} className="text-alert shrink-0" />;
+                    tone = 'border-[#d45b52] bg-[#d45b52]/12 text-[#e08b84]';
+                    icon = <X size={17} className="text-[#e08b84] shrink-0" />;
                   } else {
-                    tone = 'border-white/8 bg-transparent text-white/30';
+                    tone = 'border-ink/8 bg-transparent text-ink/30';
                   }
                 }
 
@@ -154,24 +157,28 @@ export default function Enigmas() {
           >
             <div className="relative w-24 h-24 flex items-center justify-center mb-6">
               <motion.span
-                className="absolute inset-0 rounded-full border-2 border-vibranium/60"
+                className="absolute inset-0 rounded-full border"
+                style={{ borderColor: 'rgba(201,168,106,0.5)' }}
                 animate={{ rotate: 360 }}
                 transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
               />
               <motion.span
-                className="absolute inset-2 rounded-full border border-dashed border-stark/70"
+                className="absolute inset-2 rounded-full border border-dashed border-ink/25"
                 animate={{ rotate: -360 }}
                 transition={{ duration: 6.5, repeat: Infinity, ease: 'linear' }}
               />
-              <span className="text-white text-[30px] font-bold" style={{ fontFamily: 'var(--font-display)' }}>
+              <span
+                className="text-ink text-[30px] tabular-nums"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
                 {score}/{enigmas.length}
               </span>
             </div>
 
-            <h3 className="text-white text-[25px] font-bold uppercase mb-2.5" style={{ fontFamily: 'var(--font-display)' }}>
+            <h3 className="text-ink text-[26px] mb-2.5">
               {perfect ? 'Accès autorisé' : score > 0 ? 'Accès partiel' : 'Accès refusé'}
             </h3>
-            <p className="text-white/55 text-[13px] leading-relaxed max-w-[250px]">
+            <p className="text-muted text-[13px] leading-relaxed max-w-[250px]">
               {perfect
                 ? 'Empreinte cognitive validée. Tu me connais vraiment.'
                 : 'Divergence détectée dans la timeline. Réessaie.'}
@@ -180,8 +187,7 @@ export default function Enigmas() {
             {!perfect && (
               <button
                 onClick={restart}
-                className="mt-7 flex items-center gap-2 px-5 py-3 rounded-xl text-[11px] uppercase tracking-[0.2em] text-white/60 bg-white/5 active:bg-white/10 transition-colors"
-                style={{ fontFamily: 'var(--font-mono)' }}
+                className="label-mono mt-7 flex items-center gap-2 px-5 py-3 rounded-xl bg-ink/5 active:bg-ink/10 transition-colors"
               >
                 <RotateCcw size={13} />
                 Recommencer

@@ -1,32 +1,41 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import content from '../../content.json';
 import { useReducedMotion, usePerfTier, useTilt } from '../../lib/hooks';
 import { playChime, playBraam, playSnap, playClick, haptic, HAPTIC } from '../../lib/audio';
 
 /**
- * Le climax : rassembler les six pierres, puis claquer des doigts.
+ * Le climax : six pierres posées sur des lignes de temps divergentes, puis le
+ * claquement.
  *
- * Deux étapes :
- *  1. COLLECT — timeline 2D, une pierre par trait de caractère. Chaque pierre
- *     ouvre une fiche ; la lire la « sertit ».
- *  2. FORGE   — la main 3D apparaît (three.js, cf. lib/gauntlet.js). Un tap
- *     lance la charge, le claquement, puis la désintégration.
+ * Tout tient dans UNE scène three.js continue (cf. lib/gauntlet.js) — plus
+ * d'étape 2D suivie d'une étape 3D. Les pierres sont de vraies formes 3D
+ * touchées directement dans le canvas, et chaque pierre sertie fait avancer la
+ * main d'un degré de réel. Le texte du claquement est rendu DANS la scène, sur
+ * deux plans de profondeur : « Et moi… » derrière la main, « Je suis Uriel. »
+ * devant.
  *
- * three.js n'est chargé qu'à l'entrée en FORGE : inutile de le payer pour
- * quelqu'un qui n'arrive jamais jusqu'ici.
+ * Le canvas est donc le contenu, pas un décor. Trois conséquences :
+ *  - l'action principale est un tap sur une pierre, dans le canvas ;
+ *  - un canvas n'expose rien aux lecteurs d'écran, d'où les six boutons
+ *    équivalents en bas, masqués à l'œil mais focusables au clavier ;
+ *  - three.js reste en import dynamique. Le gant est désormais en haut de la
+ *    page, donc il se charge tôt, mais il ne retarde pas le premier rendu.
  */
+
+const SEEN_KEY = 'uriel.snap.seen';
 
 /* `of` porte l'article correct par pierre : « de l' » ne marche pas pour
    Réalité, Pouvoir ni Temps, et une élision automatique sur la voyelle initiale
-   se tromperait quand même sur le genre. Six entrées écrites à la main. */
+   se tromperait quand même sur le genre. Six entrées écrites à la main.
+   Les teintes reprennent exactement STONE_COLORS de lib/gauntlet.js. */
 const STONES = [
-  { name: 'Espace', of: "de l'Espace", color: '#3b82f6' },
-  { name: 'Esprit', of: "de l'Esprit", color: '#eab308' },
-  { name: 'Réalité', of: 'de la Réalité', color: '#ef4444' },
-  { name: 'Pouvoir', of: 'du Pouvoir', color: '#a855f7' },
-  { name: 'Temps', of: 'du Temps', color: '#22c55e' },
-  { name: 'Âme', of: "de l'Âme", color: '#f97316' },
+  { name: 'Espace', of: "de l'Espace", color: '#5b8fd4' },
+  { name: 'Esprit', of: "de l'Esprit", color: '#d6b64a' },
+  { name: 'Réalité', of: 'de la Réalité', color: '#d45b52' },
+  { name: 'Pouvoir', of: 'du Pouvoir', color: '#9068c4' },
+  { name: 'Temps', of: 'du Temps', color: '#4fae74' },
+  { name: 'Âme', of: "de l'Âme", color: '#d98a4a' },
 ];
 
 /**
@@ -51,9 +60,9 @@ function TraitSheet({ trait, stone, onClose }) {
       <motion.div
         className="relative w-full max-w-sm rounded-3xl p-7 overflow-hidden"
         style={{
-          background: 'rgba(10,5,20,0.94)',
-          border: `1px solid ${stone.color}44`,
-          boxShadow: `0 0 70px ${stone.color}33, inset 0 0 26px ${stone.color}1a`,
+          background: 'rgba(11,11,17,0.94)',
+          border: `1px solid ${stone.color}33`,
+          boxShadow: `0 0 70px ${stone.color}22`,
         }}
         initial={{ y: 40, scale: 0.96 }}
         animate={{ y: 0, scale: 1 }}
@@ -68,32 +77,29 @@ function TraitSheet({ trait, stone, onClose }) {
 
         <div className="flex items-center gap-4 mb-6">
           <div
-            className="relative w-11 h-11 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: `${stone.color}22`, border: `1px solid ${stone.color}88` }}
+            className="relative w-11 h-11 rounded-full shrink-0"
+            style={{ background: `${stone.color}1f`, border: `1px solid ${stone.color}66` }}
           >
             <motion.span
               className="absolute inset-0 rounded-full"
               style={{ background: stone.color, filter: 'blur(9px)' }}
-              animate={{ opacity: [0.3, 0.65, 0.3] }}
+              animate={{ opacity: [0.25, 0.55, 0.25] }}
               transition={{ duration: 2.2, repeat: Infinity }}
             />
           </div>
           <div>
-            <p className="text-[10px] tracking-[0.26em] uppercase" style={{ color: stone.color, fontFamily: 'var(--font-mono)' }}>
+            <p className="label-mono" style={{ color: stone.color }}>
               Pierre {stone.of}
             </p>
-            <h3 className="text-white text-[20px] font-bold mt-1 leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
-              {trait.title}
-            </h3>
+            <h3 className="text-ink text-[21px] mt-1.5 leading-tight">{trait.title}</h3>
           </div>
         </div>
 
-        <p className="text-white/70 text-[14px] leading-relaxed">{trait.desc}</p>
+        <p className="text-ink/70 text-[14px] leading-relaxed">{trait.desc}</p>
 
         <button
           onClick={onClose}
-          className="mt-8 w-full py-3.5 rounded-2xl text-[11px] uppercase tracking-[0.24em] text-white/70 bg-white/5 active:bg-white/10 transition-colors"
-          style={{ fontFamily: 'var(--font-mono)' }}
+          className="label-mono mt-8 w-full py-3.5 rounded-2xl bg-ink/5 active:bg-ink/10 transition-colors"
         >
           Sertir la pierre
         </button>
@@ -102,94 +108,29 @@ function TraitSheet({ trait, stone, onClose }) {
   );
 }
 
-/** Étape 1 : la timeline des six pierres. */
-function Collect({ traits, found, onPick }) {
-  return (
-    <div className="w-full max-w-md">
-      <div className="text-center mb-10">
-        <p className="text-infinity text-[10px] tracking-[0.42em] uppercase font-bold mb-2" style={{ fontFamily: 'var(--font-mono)' }}>
-          {found.length === 6 ? 'Flux temporel stabilisé' : `Fragments — ${found.length}/6`}
-        </p>
-        <h2
-          className="text-white text-[34px] font-bold uppercase leading-none"
-          style={{ fontFamily: 'var(--font-display)', textShadow: '0 0 24px rgba(212,175,55,0.4)' }}
-        >
-          Chronologie
-        </h2>
-        <p className="text-white/45 text-[13px] mt-2.5 max-w-[280px] mx-auto leading-relaxed">
-          {found.length === 6
-            ? 'Les six pierres sont réunies. Le gantelet peut être forgé.'
-            : 'Touche chaque pierre pour révéler un fragment de qui je suis.'}
-        </p>
-      </div>
+export default function Gauntlet({ onComplete }) {
+  const traits = content.constellationTraits;
 
-      <div className="relative flex items-center justify-between px-1">
-        {/* Rail : se remplit au fil des découvertes. */}
-        <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-px bg-white/10" />
-        <motion.div
-          className="absolute left-5 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-infinity to-vibranium"
-          style={{ boxShadow: '0 0 8px rgba(212,175,55,0.6)' }}
-          animate={{ width: `${(found.length / 6) * 88}%` }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        />
-
-        {STONES.map((stone, i) => {
-          const got = found.includes(i);
-          return (
-            <motion.button
-              key={stone.name}
-              onClick={() => onPick(i)}
-              disabled={got}
-              className="relative w-11 h-11 rounded-full flex items-center justify-center shrink-0"
-              style={{
-                background: got ? stone.color : '#120b20',
-                border: `2px solid ${got ? stone.color : 'rgba(255,255,255,0.14)'}`,
-                boxShadow: got ? `0 0 22px ${stone.color}, inset 0 0 9px rgba(255,255,255,0.5)` : 'none',
-              }}
-              whileTap={got ? undefined : { scale: 0.88 }}
-              /* Le titre du trait est annoncé quand la pierre est sertie, sinon
-                 le lecteur d'écran ne lit qu'une couleur sans contenu. */
-              aria-label={
-                got
-                  ? `Pierre ${stone.of} — sertie : ${traits[i].title}`
-                  : `Pierre ${stone.of} — révéler le fragment`
-              }
-            >
-              {!got && <span className="w-1.5 h-1.5 rounded-full bg-white/25" />}
-              {got && (
-                <motion.span
-                  className="absolute inset-0 rounded-full border border-white/70"
-                  animate={{ scale: [1, 1.65], opacity: [0.6, 0] }}
-                  transition={{ duration: 1.7, repeat: Infinity, ease: 'easeOut' }}
-                />
-              )}
-            </motion.button>
-          );
-        })}
-      </div>
-
-      {/* Compteur textuel : redondance utile pour les lecteurs d'écran. */}
-      <p className="sr-only" aria-live="polite">
-        {found.length} pierres sur 6 rassemblées.
-      </p>
-    </div>
-  );
-}
-
-/** Étape 2 : la main 3D et le claquement. */
-function Forge({ onComplete }) {
   const canvasRef = useRef(null);
   const handleRef = useRef(null);
-  const [state, setState] = useState('loading'); // loading | ready | running | gone
+  const doneRef = useRef(false);
+
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [found, setFound] = useState([]);
+  const [openIdx, setOpenIdx] = useState(null);
+  const [cine, setCine] = useState(false);
+  const [canSkip, setCanSkip] = useState(false);
+  const [line, setLine] = useState(0);
   const [flash, setFlash] = useState(false);
-  const [line, setLine] = useState(0); // avancée du sous-titre
+  const [gone, setGone] = useState(false);
 
   const reduced = useReducedMotion();
   const tier = usePerfTier();
   const { tilt } = useTilt({ enabled: !reduced });
 
   /* Le parent recrée onComplete à chaque rendu. On le garde dans une ref :
-     l'effet ci-dessous n'a donc pas à en dépendre — sinon la scène three.js
+     l'effet de montage n'a donc pas à en dépendre — sinon la scène three.js
      serait démontée et reconstruite au moindre rendu du parent — tout en
      appelant toujours la version à jour. */
   const completeRef = useRef(onComplete);
@@ -197,11 +138,24 @@ function Forge({ onComplete }) {
     completeRef.current = onComplete;
   }, [onComplete]);
 
-  /* Les minuteries de mise en scène sont regroupées ici pour être annulées au
-     démontage : sans ça, quitter l'écran pendant la charge laisse des timers
-     qui réveillent un composant mort. */
+  /* Minuteries de mise en scène, annulées au démontage : sans ça, quitter
+     l'écran pendant la charge laisse des timers qui réveillent un composant
+     mort. */
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  /** Idempotent : la scène et le bouton « passer » peuvent tous deux y mener. */
+  const finish = useCallback(() => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    setGone(true);
+    try {
+      localStorage.setItem(SEEN_KEY, '1');
+    } catch {
+      // Navigation privée ou stockage refusé : on perd juste le raccourci.
+    }
+    completeRef.current?.();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -209,58 +163,97 @@ function Forge({ onComplete }) {
     import('../../lib/gauntlet')
       .then(({ mountGauntlet }) => {
         if (cancelled || !canvasRef.current) return;
+
         const handle = mountGauntlet(canvasRef.current, {
           tier,
           reduced,
           tilt,
+          // Un tap dans le canvas : la scène a déjà trouvé la pierre la plus
+          // proche du doigt et vérifié qu'elle n'est pas sertie.
+          onStoneTap: (i) => {
+            playClick();
+            haptic(HAPTIC.tap);
+            setOpenIdx(i);
+          },
           onFlash: () => {
             setFlash(true);
             playSnap();
             haptic(HAPTIC.snap);
             timers.current.push(setTimeout(() => setFlash(false), 900));
           },
-          onDissolved: () => {
-            setState('gone');
-            completeRef.current?.();
-          },
+          // Les répliques sont affichées dans la scène ; ici on ne tient que
+          // l'équivalent textuel pour les lecteurs d'écran.
+          onLine: setLine,
+          onCollapse: () => haptic(HAPTIC.soft),
+          onDone: finish,
         });
+
         if (!handle) {
-          // Sans WebGL : on ne bloque pas la fin du récit.
-          setState('gone');
-          completeRef.current?.();
+          // Pas de WebGL : on ne bloque pas la fin du récit.
+          setFailed(true);
+          finish();
           return;
         }
         handleRef.current = handle;
-        setState('ready');
+        setReady(true);
       })
       .catch(() => {
         if (cancelled) return;
         // Le chunk three.js n'a pas pu être chargé (réseau coupé) : on délivre
         // quand même l'invitation plutôt que de laisser l'invité bloqué ici.
-        setState('gone');
-        completeRef.current?.();
+        setFailed(true);
+        finish();
       });
 
     return () => {
       cancelled = true;
       handleRef.current?.destroy();
+      handleRef.current = null;
     };
-  }, [tier, reduced, tilt]);
+  }, [tier, reduced, tilt, finish]);
 
-  const trigger = () => {
-    if (state !== 'ready') return;
-    setState('running');
+  /** La fiche se ferme : la pierre est sertie, la main gagne un degré de réel. */
+  const seal = () => {
+    if (openIdx === null) return;
+    const i = openIdx;
+    setOpenIdx(null);
+    if (found.includes(i)) return;
+
+    const next = [...found, i];
+    setFound(next);
+    handleRef.current?.collect(i);
+    playChime(523.25 + next.length * 55);
+    haptic(HAPTIC.soft);
+  };
+
+  const snap = () => {
+    if (cine || found.length < 6) return;
+    setCine(true);
     playBraam(3.4);
     haptic(HAPTIC.impact);
     handleRef.current?.snap();
 
-    // Sous-titres calés sur la charge (2,6 s) : « Et moi… » puis la révélation.
-    setLine(1);
-    timers.current.push(setTimeout(() => setLine(2), 1300));
+    /* Non interruptible d'emblée : c'est la récompense. Le bouton « passer »
+       n'apparaît qu'au bout de 2,5 s — et immédiatement si la cinématique a
+       déjà été vue lors d'une visite précédente. */
+    let seen = false;
+    try {
+      seen = localStorage.getItem(SEEN_KEY) === '1';
+    } catch {
+      // Stockage indisponible : on retombe sur le délai normal.
+    }
+    timers.current.push(setTimeout(() => setCanSkip(true), seen ? 0 : 2500));
   };
 
+  const skip = () => {
+    playClick();
+    handleRef.current?.skip();
+  };
+
+  const complete = found.length === 6;
+
   return (
-    <div className="relative w-full flex flex-col items-center">
+    <div className="w-full flex flex-col items-center">
       {/* Flash du claquement, au-dessus de tout. */}
       <AnimatePresence>
         {flash && (
@@ -276,127 +269,148 @@ function Forge({ onComplete }) {
         )}
       </AnimatePresence>
 
-      {/* Sous-titres */}
-      <div className="h-24 flex flex-col items-center justify-center text-center px-6">
-        <AnimatePresence mode="wait">
-          {line === 1 && (
-            <motion.p
-              key="l1"
-              className="text-white/55 text-[17px] italic tracking-wide"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
-              Et moi…
-            </motion.p>
-          )}
-          {line === 2 && (
-            <motion.h2
-              key="l2"
-              className="text-white text-[clamp(34px,11vw,50px)] font-bold uppercase leading-none"
-              style={{ fontFamily: 'var(--font-display)', textShadow: '0 0 44px rgba(139,92,246,0.85)' }}
-              initial={{ opacity: 0, scale: 0.92, filter: 'blur(12px)' }}
-              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            >
-              Je suis Uriel.
-            </motion.h2>
-          )}
-        </AnimatePresence>
+      <div className="text-center mb-7 px-6">
+        <p className="label-mono mb-3">
+          {cine ? 'Flux temporel' : complete ? 'Les six pierres sont réunies' : `Pierres — ${found.length}/6`}
+        </p>
+        <h2 className="text-ink text-[clamp(30px,9vw,42px)] leading-[1.05]">
+          {complete ? 'Le gantelet' : 'Lignes de temps'}
+        </h2>
+        <p className="text-muted text-[13.5px] mt-3 max-w-[290px] mx-auto leading-relaxed">
+          {cine
+            ? null
+            : complete
+              ? 'La main a pris forme. Claquez des doigts.'
+              : 'Touchez une pierre sur les branches : chacune révèle un fragment de qui je suis, et la main gagne un degré de réel.'}
+        </p>
       </div>
 
-      {/* Scène 3D */}
-      <button
-        onClick={trigger}
-        disabled={state !== 'ready'}
-        className="relative w-full max-w-[340px] aspect-[3/4] cursor-pointer disabled:cursor-default"
-        aria-label="Déclencher le claquement de doigts"
+      {/* La scène : pierres, branches et main dans un seul canvas. */}
+      <div
+        className="relative w-full max-w-[380px] aspect-[3/4.2] rounded-[28px] overflow-hidden"
+        style={{ background: '#06060a' }}
       >
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full touch-none"
+          style={{ opacity: gone ? 0 : 1, transition: 'opacity 700ms var(--ease-signature)' }}
+        />
 
-        {state === 'loading' && (
+        {!ready && !failed && (
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.span
-              className="w-8 h-8 rounded-full border-2 border-vibranium/30 border-t-vibranium"
+              className="w-8 h-8 rounded-full border border-accent/25 border-t-accent"
               animate={{ rotate: 360 }}
               transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
             />
           </div>
         )}
-      </button>
 
-      <div className="h-12 flex items-center">
+        {failed && (
+          <div className="absolute inset-0 flex items-center justify-center px-8">
+            <p className="text-muted text-[13px] text-center leading-relaxed">
+              Votre navigateur ne peut pas afficher la scène 3D. Le reste de l'invitation
+              vous attend plus bas.
+            </p>
+          </div>
+        )}
+
+        {/* Le bouton « passer », discret, en bas du cadre. */}
         <AnimatePresence>
-          {state === 'ready' && (
-            <motion.p
-              className="text-white/45 text-[10px] uppercase tracking-[0.34em]"
-              style={{ fontFamily: 'var(--font-mono)' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0.3, 0.85, 0.3] }}
+          {cine && canSkip && !gone && (
+            <motion.button
+              onClick={skip}
+              className="label-mono absolute bottom-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full glass-nexus"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              transition={{ duration: 0.4 }}
             >
-              Touchez le gantelet
+              Passer
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Action principale : un seul élément en avant, et seulement quand il
+          a un sens. Avant les six pierres, rien à cliquer ici. */}
+      {/* Pas de mode="wait" ici : les deux états sont exclusifs, et surtout
+          l'indice clignote en repeat:Infinity. En mode "wait", cette boucle
+          s'appliquerait aussi à sa sortie — qui ne finirait donc jamais, et le
+          bouton du claquement ne serait jamais monté. */}
+      <div className="h-[72px] flex items-center justify-center">
+        <AnimatePresence>
+          {complete && !cine && ready && (
+            <motion.button
+              key="snap"
+              onClick={snap}
+              className="label-mono px-8 py-4 rounded-full text-void"
+              style={{ background: 'var(--color-accent)', letterSpacing: '0.12em' }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              Claquer des doigts
+            </motion.button>
+          )}
+
+          {!complete && ready && (
+            <motion.p
+              key="hint"
+              className="label-mono"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.3, 0.8, 0.3] }}
+              // Sortie explicitement finie : sans ça elle hériterait du
+              // repeat:Infinity du clignotement et ne se terminerait jamais.
+              exit={{ opacity: 0, transition: { duration: 0.3, repeat: 0 } }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              Touchez une pierre
             </motion.p>
           )}
         </AnimatePresence>
       </div>
-    </div>
-  );
-}
 
-export default function Gauntlet({ onComplete }) {
-  const traits = content.constellationTraits;
-  const [found, setFound] = useState([]);
-  const [openIdx, setOpenIdx] = useState(null);
-  const [stage, setStage] = useState('COLLECT');
-
-  const stageTimer = useRef(0);
-  useEffect(() => () => clearTimeout(stageTimer.current), []);
-
-  const pick = (i) => {
-    if (found.includes(i)) return;
-    playClick();
-    haptic(HAPTIC.tap);
-    setOpenIdx(i);
-  };
-
-  const seal = () => {
-    if (openIdx === null) return;
-    const next = [...found, openIdx];
-    setFound(next);
-    setOpenIdx(null);
-    playChime(523.25 + next.length * 55);
-    haptic(HAPTIC.soft);
-
-    // Les six pierres réunies : on passe à la forge après une courte respiration.
-    if (next.length === 6) stageTimer.current = setTimeout(() => setStage('FORGE'), 1200);
-  };
-
-  return (
-    <div className="w-full flex flex-col items-center">
-      <AnimatePresence mode="wait">
-        {stage === 'COLLECT' ? (
-          <motion.div key="collect" className="w-full flex justify-center" exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }}>
-            <Collect traits={traits} found={found} onPick={pick} />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="forge"
-            className="w-full flex justify-center"
-            initial={{ opacity: 0, y: 26 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      {/* Un canvas n'expose rien : voici les mêmes six actions, invisibles à
+          l'œil mais atteignables au clavier et par lecteur d'écran. Elles
+          réapparaissent au focus pour que la navigation reste visible. */}
+      <div className="flex flex-wrap justify-center gap-2">
+        {STONES.map((stone, i) => (
+          <button
+            key={stone.name}
+            onClick={() => {
+              if (found.includes(i) || cine) return;
+              playClick();
+              haptic(HAPTIC.tap);
+              setOpenIdx(i);
+            }}
+            disabled={found.includes(i) || cine || !ready}
+            className="label-mono sr-only focus:not-sr-only focus:px-3 focus:py-2 focus:rounded-full focus:bg-ink/10"
           >
-            <Forge onComplete={onComplete} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {found.includes(i)
+              ? `Pierre ${stone.of} — sertie : ${traits[i].title}`
+              : `Pierre ${stone.of} — révéler le fragment`}
+          </button>
+        ))}
+      </div>
+
+      {/* Équivalent textuel de la progression et des répliques de la scène. */}
+      <p className="sr-only" aria-live="polite">
+        {cine
+          ? line === 2
+            ? 'Je suis Uriel.'
+            : line === 1
+              ? 'Et moi…'
+              : 'Le gantelet se charge.'
+          : `${found.length} pierres sur 6 serties.`}
+      </p>
 
       <AnimatePresence>
-        {openIdx !== null && <TraitSheet trait={traits[openIdx]} stone={STONES[openIdx]} onClose={seal} />}
+        {openIdx !== null && (
+          <TraitSheet trait={traits[openIdx]} stone={STONES[openIdx]} onClose={seal} />
+        )}
       </AnimatePresence>
     </div>
   );
 }
-

@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Espace de travail de l'agent : worktrees jetables et réglages locaux.
+.claude/worktrees/
+.claude/settings.local.json
+
+# Reconnaissance : captures et bundles du site de référence, non distribués.
+.ref/
