@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import LockScreen from './components/features/LockScreen';
 import IncomingCall from './components/features/IncomingCall';
 import QuantumDive from './components/features/QuantumDive';
-import NexusHub from './components/features/NexusHub';
 import UniverseMap from './components/features/UniverseMap';
 import UniverseSelf from './components/features/UniverseSelf';
 import {
@@ -20,12 +19,12 @@ import './index.css';
 /**
  * La machine à états du récit.
  *
- *   LOCK → CALL → DIVE → HUB ⇄ MAP
- *                         ⇅
- *                        SELF
+ *   LOCK → CALL → DIVE → MAP ⇄ SELF
  *
- * L'ordre n'est pas négociable jusqu'au HUB : c'est là que tient l'illusion.
- * À partir du hub, l'invité circule librement entre les deux univers.
+ * L'écran d'appel EST le carrefour : ses deux glyphes (épingle / empreinte)
+ * choisissent l'univers, le plongeon y mène directement. Le hub intermédiaire a
+ * été supprimé — il redemandait à l'invité un choix qu'il venait de faire.
+ * Une fois dans le multivers, les deux univers restent reliés entre eux.
  *
  * Le son est géré ici parce que c'est le seul endroit qui survit à tous les
  * écrans. Le déverrouillage de l'AudioContext se fait sur le geste du
@@ -34,7 +33,7 @@ import './index.css';
  * seconde.
  */
 
-const STAGES_WITH_CHROME = new Set(['HUB', 'MAP', 'SELF']);
+const STAGES_WITH_CHROME = new Set(['MAP', 'SELF']);
 
 function SoundIcon({ muted }) {
   return (
@@ -54,6 +53,8 @@ function SoundIcon({ muted }) {
 
 export default function App() {
   const [stage, setStage] = useState('LOCK');
+  /* Destination choisie sur l'écran d'appel, consommée à la fin du plongeon. */
+  const [target, setTarget] = useState('MAP');
   /* La préférence vient de localStorage : elle est disponible dès le premier
      rendu, donc autant initialiser l'état directement. Passer par un effet
      afficherait brièvement la mauvaise icône puis déclencherait un re-rendu. */
@@ -61,6 +62,33 @@ export default function App() {
 
   // Filet de sécurité : quitter la page ne doit pas laisser un drone tourner.
   useEffect(() => () => stopAll(), []);
+
+  // --- LOGIQUE AUTOPLAY (déclenchée par le QR Code) ---
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('autoplay') === 'true') {
+      const runAutoplay = async () => {
+        // 1. Écran de verrouillage : on laisse le temps de voir l'écran (2.5s)
+        await new Promise(resolve => setTimeout(resolve, 2500));
+        
+        // 2. On déverrouille et on passe à l'appel
+        // (On met un try/catch car le navigateur bloque parfois l'audio s'il n'y a eu AUCUN clic du tout)
+        try { await unlockAudio(); } catch (e) { console.warn("Audio ignoré sans interaction"); }
+        setStage('CALL');
+
+        // 3. Écran d'appel : on laisse sonner pendant 4 secondes
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        
+        // 4. On décroche automatiquement vers la carte (localisation)
+        setTarget('MAP');
+        setStage('DIVE');
+        
+        // Ensuite, le DIVE se termine tout seul via handleDiveComplete et affiche MAP
+      };
+      runAutoplay();
+    }
+  }, []);
+  // ----------------------------------------------------
 
   const toggleMute = () => {
     const next = !muted;
@@ -79,17 +107,23 @@ export default function App() {
     setStage('CALL');
   }, []);
 
-  const handleAccept = useCallback(() => setStage('DIVE'), []);
-
-  const handleDiveComplete = useCallback(() => setStage('HUB'), []);
-
-  const goHub = useCallback(() => {
-    playWhoosh();
-    setStage('HUB');
+  /* L'écran d'appel choisit la destination, le plongeon la sert. */
+  const handlePick = useCallback((universe) => {
+    setTarget(universe);
+    setStage('DIVE');
   }, []);
 
-  const goMap = useCallback(() => setStage('MAP'), []);
-  const goSelf = useCallback(() => setStage('SELF'), []);
+  const handleDiveComplete = useCallback(() => setStage(target), [target]);
+
+  const goMap = useCallback(() => {
+    playWhoosh();
+    setStage('MAP');
+  }, []);
+
+  const goSelf = useCallback(() => {
+    playWhoosh();
+    setStage('SELF');
+  }, []);
 
   return (
     <div className="relative w-full min-h-[100dvh] bg-void overflow-hidden">
@@ -131,7 +165,7 @@ export default function App() {
             transition={{ duration: 0.4 }}
             className="w-full"
           >
-            <IncomingCall onAccept={handleAccept} />
+            <IncomingCall onPick={handlePick} />
           </motion.div>
         )}
 
@@ -140,19 +174,6 @@ export default function App() {
         {stage === 'DIVE' && (
           <motion.div key="dive" exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="w-full">
             <QuantumDive onComplete={handleDiveComplete} />
-          </motion.div>
-        )}
-
-        {stage === 'HUB' && (
-          <motion.div
-            key="hub"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-            className="w-full"
-          >
-            <NexusHub onPickMap={goMap} onPickSelf={goSelf} />
           </motion.div>
         )}
 
@@ -165,7 +186,7 @@ export default function App() {
             transition={{ duration: 0.6 }}
             className="w-full"
           >
-            <UniverseMap onSwitch={goSelf} onBack={goHub} />
+            <UniverseMap onSwitch={goSelf} />
           </motion.div>
         )}
 
@@ -178,7 +199,7 @@ export default function App() {
             transition={{ duration: 0.6 }}
             className="w-full"
           >
-            <UniverseSelf onSwitch={goMap} onBack={goHub} />
+            <UniverseSelf onSwitch={goMap} />
           </motion.div>
         )}
       </AnimatePresence>
