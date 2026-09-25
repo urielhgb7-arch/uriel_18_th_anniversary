@@ -77,38 +77,6 @@ const LockIcon = () => (
   </svg>
 );
 
-const FlashIcon = () => (
-  <svg width="17" height="24" viewBox="0 0 17 24" fill="none" aria-hidden="true">
-    <path d="M9.6 1 3 13.2h4.3L6.4 23 14 10.4H9.3L9.6 1Z" fill="rgba(255,255,255,0.95)" />
-  </svg>
-);
-
-const CameraIcon = () => (
-  <svg width="24" height="20" viewBox="0 0 24 20" fill="none" aria-hidden="true">
-    <path
-      d="M2.4 6.2h3.1l1.4-2.4h8.2l1.4 2.4h3.1a1.6 1.6 0 0 1 1.6 1.6v8.4a1.6 1.6 0 0 1-1.6 1.6H2.4A1.6 1.6 0 0 1 .8 16.2V7.8a1.6 1.6 0 0 1 1.6-1.6Z"
-      fill="rgba(255,255,255,0.95)"
-    />
-    <circle cx="11.6" cy="12" r="3.6" fill="#0b0e13" />
-  </svg>
-);
-
-import { LiquidButton } from '../ui/liquid-glass-button';
-
-/** Pastille ronde translucide du bas de l'écran verrouillé. */
-function QuickAction({ children, label }) {
-  return (
-    <LiquidButton
-      variant="default"
-      size="icon"
-      className="w-14 h-14 rounded-full p-0 flex items-center justify-center text-white/95"
-      aria-label={label}
-    >
-      {children}
-    </LiquidButton>
-  );
-}
-
 export default function LockScreen({ onUnlock }) {
   const now = useClock();
 
@@ -167,13 +135,6 @@ export default function LockScreen({ onUnlock }) {
             {date.charAt(0).toUpperCase() + date.slice(1)}
           </p>
 
-          {/* Poids 200 + tabular-nums : le rendu exact de l'heure iOS.
-              Le verre vient d'une plaque à backdrop-filter posée DERRIÈRE les
-              chiffres et fondue par un masque radial — donc sans bord visible.
-              Choix assumé : pas de masque SVG texte, dont les métriques
-              dépendraient de la police locale et se décaleraient d'un appareil
-              à l'autre. Les chiffres, eux, restent légèrement translucides pour
-              laisser l'irisation passer à travers. */}
           <div className="relative mt-1">
             <div
               className="absolute -inset-x-8 -inset-y-4 pointer-events-none"
@@ -188,14 +149,14 @@ export default function LockScreen({ onUnlock }) {
               className="relative leading-[0.92]"
               style={{
                 fontFamily: 'var(--font-ios)',
-                fontSize: 'clamp(76px, 23vw, 112px)',
-                fontWeight: 200,
+                fontSize: 'clamp(90px, 28vw, 140px)',
+                fontWeight: 700,
                 letterSpacing: '-0.035em',
                 fontVariantNumeric: 'tabular-nums',
-                color: 'rgba(255,255,255,0.93)',
-                WebkitTextStroke: '0.4px rgba(255,255,255,0.14)',
+                color: 'rgba(255,255,255,0.95)',
+                WebkitTextStroke: '1px rgba(255,255,255,0.2)',
                 textShadow:
-                  '0 -1px 0 rgba(255,255,255,0.22), 0 2px 30px rgba(0,0,0,0.42), 0 0 42px rgba(190,205,255,0.13)',
+                  '0 -1px 0 rgba(255,255,255,0.3), 0 2px 30px rgba(0,0,0,0.5), 0 0 42px rgba(190,205,255,0.2)',
               }}
             >
               {time}
@@ -211,19 +172,10 @@ export default function LockScreen({ onUnlock }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.8 }}
         >
-          <div className="flex items-center justify-between w-full max-w-[280px] px-1">
-            <QuickAction label="Lampe torche">
-              <FlashIcon />
-            </QuickAction>
-            <QuickAction label="Appareil photo">
-              <CameraIcon />
-            </QuickAction>
-          </div>
-
           {/* iOS n'affiche pas cette consigne. Ici elle est indispensable : le
               visiteur doit comprendre qu'il y a quelque chose à faire. */}
           <motion.p
-            className="text-white/55 text-[13px] tracking-wide"
+            className="text-white/55 text-[15px] font-medium tracking-wide"
             style={{ fontFamily: 'var(--font-ios)' }}
             animate={{ opacity: [0.35, 0.85, 0.35], y: [0, -5, 0] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}

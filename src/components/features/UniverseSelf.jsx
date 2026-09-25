@@ -370,10 +370,11 @@ export default function UniverseSelf({ onSwitch }) {
             haptic(HAPTIC.soft);
             onSwitch();
           }}
-          className="w-10 h-10 rounded-full glass-nexus flex items-center justify-center text-ink/60 active:text-ink"
+          className="px-4 h-10 rounded-full glass-nexus flex items-center justify-center gap-2 text-ink/80 active:text-ink transition-colors"
           aria-label="Voir la localisation"
         >
           <Map size={17} />
+          <span className="text-[13px] font-medium" style={{ fontFamily: 'var(--font-sans)' }}>Localisation</span>
         </button>
       </div>
     </div>

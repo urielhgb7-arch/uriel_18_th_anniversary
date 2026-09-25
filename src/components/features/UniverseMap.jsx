@@ -98,131 +98,102 @@ function Telemetry({ lat, lng, progress }) {
   );
 }
 
-/** Étape 1 : globe 3D. */
+import { BlobShader } from '../blob-organique-3d';
+
+/** Étape 1 : globe 3D (remplacé par Blob organique 3D). */
 function GlobeStage({ lat, lng, onArrive, tilt, reduced, tier }) {
-  const canvasRef = useRef(null);
   const [phase, setPhase] = useState(0);
-  const [failed, setFailed] = useState(false);
   const [progress, setProgress] = useState(0);
-  const handleRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
-    let fallback = 0;
     const t0 = performance.now();
 
-    // Progression pour le HUD : découplée de la boucle de rendu WebGL, qui n'a
-    // pas à provoquer de re-render React à chaque frame.
     const ticker = setInterval(() => {
       setProgress(Math.min((performance.now() - t0) / FLIGHT_MS, 1));
     }, 120);
 
-    import('../../lib/globe')
-      .then(({ mountGlobe }) => {
-        if (cancelled || !canvasRef.current) return;
-        const handle = mountGlobe(canvasRef.current, {
-          lat,
-          lng,
-          tier,
-          reduced,
-          duration: FLIGHT_MS,
-          tilt,
-          onPhase: (i) => {
-            setPhase(i);
-            playTick();
-            haptic(HAPTIC.tap);
-          },
-          onArrive: () => {
-            playLock();
-            haptic(HAPTIC.impact);
-            onArrive();
-          },
-        });
-        if (!handle) {
-          setFailed(true);
-          // Sans WebGL on ne bloque pas : on saute directement à la carte.
-          fallback = setTimeout(onArrive, 900);
-          return;
-        }
-        handleRef.current = handle;
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setFailed(true);
-        fallback = setTimeout(onArrive, 900);
-      });
+    const fallback = setTimeout(() => {
+      if (!cancelled) {
+        playLock();
+        haptic(HAPTIC.impact);
+        onArrive();
+      }
+    }, FLIGHT_MS);
+
+    // Simulate phases of triangulation
+    const phase1 = setTimeout(() => !cancelled && setPhase(1), FLIGHT_MS * 0.33);
+    const phase2 = setTimeout(() => !cancelled && setPhase(2), FLIGHT_MS * 0.66);
 
     return () => {
       cancelled = true;
       clearInterval(ticker);
-      /* Le repli doit être annulé : sans ça, revenir au hub pendant ces 900 ms
-         déclencherait quand même l'arrivée et changerait d'étape par-dessus. */
       clearTimeout(fallback);
-      handleRef.current?.destroy();
+      clearTimeout(phase1);
+      clearTimeout(phase2);
     };
-  }, [lat, lng, tier, reduced, tilt, onArrive]);
+  }, [lat, lng, onArrive]);
 
   return (
     <div className="absolute inset-0 bg-void">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-
-      {failed && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="label-mono">Acquisition satellite…</p>
-        </div>
-      )}
-
-      <HudFrame />
-
-      <div className="absolute top-0 left-0 right-0 pt-safe px-6 z-20 pointer-events-none">
-        <div className="flex items-start justify-between mt-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <motion.span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: 'var(--color-accent)' }}
-                animate={{ opacity: [1, 0.2, 1] }}
-                transition={{ duration: 1.1, repeat: Infinity }}
-              />
-              <span className="label-mono" style={{ color: 'var(--color-accent)' }}>
-                Triangulation
-              </span>
-            </div>
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={phase}
-                className="text-ink text-xl mt-1.5"
-                style={{ fontFamily: 'var(--font-display)' }}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.32 }}
-              >
-                {FLYBY_LABELS[phase] ?? FLYBY_LABELS[0]}
-              </motion.p>
-            </AnimatePresence>
-          </div>
-          <div className="text-right mt-1">
-            <Telemetry lat={lat} lng={lng} progress={progress} />
-          </div>
-        </div>
+      <div className="absolute inset-0 z-0">
+        <BlobShader color="rgba(201,168,106,1)" background="#0b0e13" scale={1.8} intensity={0.6} cameraZ={6} followMouse={true} />
       </div>
 
-      {/* Barre de progression du vol : donne une fin visible à l'attente. */}
-      <div className="absolute bottom-0 left-0 right-0 pb-safe px-6 z-20 pointer-events-none">
-        <div className="mb-6">
-          <div className="h-px w-full bg-ink/10 overflow-hidden">
-            <motion.div
-              className="h-full"
-              style={{
-                background: 'var(--color-accent)',
-                boxShadow: '0 0 8px rgba(201,168,106,0.7)',
-              }}
-              animate={{ width: `${progress * 100}%` }}
-              transition={{ ease: 'linear', duration: 0.12 }}
-            />
+      {/* Container avec pointer-events-none pour ne pas bloquer les événements souris du blob */}
+      <div className="absolute inset-0 pointer-events-none z-10">
+        <HudFrame />
+
+        <div className="absolute top-0 left-0 right-0 pt-safe px-6 z-20 pointer-events-none">
+          <div className="flex items-start justify-between mt-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <motion.span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: 'var(--color-accent)' }}
+                  animate={{ opacity: [1, 0.2, 1] }}
+                  transition={{ duration: 1.1, repeat: Infinity }}
+                />
+                <span className="label-mono" style={{ color: 'var(--color-accent)' }}>
+                  Triangulation
+                </span>
+              </div>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={phase}
+                  className="text-ink text-xl mt-1.5"
+                  style={{ fontFamily: 'var(--font-display)' }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.32 }}
+                >
+                  {FLYBY_LABELS[phase] ?? FLYBY_LABELS[0]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+            <div className="text-right mt-1">
+              <Telemetry lat={lat} lng={lng} progress={progress} />
+            </div>
           </div>
-          <p className="label-mono mt-2">Descente orbitale</p>
+        </div>
+
+        {/* Barre de progression du vol */}
+        <div className="absolute bottom-0 left-0 right-0 pb-safe px-6 z-20 pointer-events-none">
+          <div className="mb-6">
+            <div className="h-px w-full bg-ink/10 overflow-hidden">
+              <motion.div
+                className="h-full"
+                style={{
+                  background: 'var(--color-accent)',
+                  boxShadow: '0 0 8px rgba(201,168,106,0.7)',
+                }}
+                animate={{ width: `${progress * 100}%` }}
+                transition={{ ease: 'linear', duration: 0.12 }}
+              />
+            </div>
+            <p className="label-mono mt-2">Descente orbitale</p>
+          </div>
         </div>
       </div>
     </div>
@@ -389,9 +360,9 @@ function GroundStage({ lat, lng, name, venue, onSwitch }) {
                   haptic(HAPTIC.soft);
                   onSwitch();
                 }}
-                className="label-mono w-full flex items-center justify-center gap-2 py-4 mt-1 active:text-ink transition-colors"
+                className="label-mono w-full flex items-center justify-center gap-2 py-[16px] mt-3 bg-white/5 border border-white/10 rounded-2xl active:bg-white/10 transition-colors text-ink/80 hover:text-ink"
               >
-                <Sparkles size={12} />
+                <Sparkles size={14} />
                 Me connaître
               </button>
             </motion.div>

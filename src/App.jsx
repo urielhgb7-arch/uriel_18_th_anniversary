@@ -52,7 +52,10 @@ function SoundIcon({ muted }) {
 }
 
 export default function App() {
-  const [stage, setStage] = useState('LOCK');
+  const [stage, setStage] = useState(() => {
+    // Si l'utilisateur est déjà passé, on saute l'intro
+    return localStorage.getItem('has_unlocked') === 'true' ? 'MAP' : 'LOCK';
+  });
   /* Destination choisie sur l'écran d'appel, consommée à la fin du plongeon. */
   const [target, setTarget] = useState('MAP');
   /* La préférence vient de localStorage : elle est disponible dès le premier
@@ -68,11 +71,15 @@ export default function App() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('autoplay') === 'true') {
       const runAutoplay = async () => {
+        // Si on a déjà déverrouillé, on est directement sur MAP, pas besoin d'autoplay
+        if (localStorage.getItem('has_unlocked') === 'true') {
+          return;
+        }
+        
         // 1. Écran de verrouillage : on laisse le temps de voir l'écran (2.5s)
         await new Promise(resolve => setTimeout(resolve, 2500));
         
         // 2. On déverrouille et on passe à l'appel
-        // (On met un try/catch car le navigateur bloque parfois l'audio s'il n'y a eu AUCUN clic du tout)
         try { await unlockAudio(); } catch (e) { console.warn("Audio ignoré sans interaction"); }
         setStage('CALL');
 
@@ -80,10 +87,9 @@ export default function App() {
         await new Promise(resolve => setTimeout(resolve, 4000));
         
         // 4. On décroche automatiquement vers la carte (localisation)
+        localStorage.setItem('has_unlocked', 'true');
         setTarget('MAP');
         setStage('DIVE');
-        
-        // Ensuite, le DIVE se termine tout seul via handleDiveComplete et affiche MAP
       };
       runAutoplay();
     }
@@ -109,6 +115,7 @@ export default function App() {
 
   /* L'écran d'appel choisit la destination, le plongeon la sert. */
   const handlePick = useCallback((universe) => {
+    localStorage.setItem('has_unlocked', 'true');
     setTarget(universe);
     setStage('DIVE');
   }, []);
