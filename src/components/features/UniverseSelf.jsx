@@ -120,54 +120,54 @@ function Fragment({ passion, index, total, scroller, mx, my, reduced }) {
   );
 }
 
-/** Face visible du monolithe. Isolée pour servir aussi le rendu reduced-motion. */
+/** Face visible du monolithe (désormais représenté comme une galaxie). Isolée pour servir aussi le rendu reduced-motion. */
 function FragmentCard({ passion, index, total, hue, Icon, shine }) {
   return (
     <div
-      className="relative rounded-[28px] p-8 overflow-hidden"
+      className="relative rounded-full p-10 overflow-hidden flex flex-col items-center text-center aspect-square justify-center"
       style={{
-        background: 'linear-gradient(155deg, rgba(20,20,27,0.9), rgba(6,6,10,0.95))',
-        border: `1px solid ${hue}33`,
-        boxShadow: `0 30px 80px -26px ${hue}3d, inset 0 1px 0 rgba(255,255,255,0.06)`,
-        backdropFilter: 'blur(18px)',
+        width: '320px',
+        background: `radial-gradient(circle at center, ${hue}22 0%, rgba(10,10,15,0.95) 70%)`,
+        border: `1px solid ${hue}44`,
+        boxShadow: `0 0 60px ${hue}33, inset 0 0 40px ${hue}22`,
+        backdropFilter: 'blur(12px)',
       }}
     >
-      {/* Reflet piloté par le gyroscope. */}
-      {shine && <motion.div className="absolute inset-0 pointer-events-none" style={{ background: shine }} />}
-
-      {/* Arête supérieure lumineuse : donne l'épaisseur du verre. */}
-      <div
-        className="absolute top-0 left-6 right-6 h-px"
-        style={{ background: `linear-gradient(90deg,transparent,${hue},transparent)` }}
+      {/* Cœur de la galaxie (lueur centrale) */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at center, ${hue}55 0%, transparent 50%)`,
+          filter: 'blur(20px)',
+        }}
+        animate={{ opacity: [0.6, 1, 0.6], scale: [0.9, 1.1, 0.9] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      <div className="relative flex items-center justify-between mb-7">
+      {/* Reflet piloté par le gyroscope. */}
+      {shine && <motion.div className="absolute inset-0 pointer-events-none rounded-full" style={{ background: shine }} />}
+
+      <div className="relative z-10 flex flex-col items-center">
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center relative"
-          style={{ background: `${hue}18`, border: `1px solid ${hue}55` }}
+          className="w-16 h-16 rounded-full flex items-center justify-center relative mb-4"
+          style={{ background: `${hue}33`, border: `1px solid ${hue}88`, boxShadow: `0 0 20px ${hue}55` }}
         >
           <motion.span
-            className="absolute inset-0 rounded-2xl"
-            style={{ background: hue, filter: 'blur(14px)' }}
-            animate={{ opacity: [0.2, 0.42, 0.2] }}
-            transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute inset-0 rounded-full"
+            style={{ background: hue, filter: 'blur(10px)' }}
+            animate={{ opacity: [0.4, 0.8, 0.4], rotate: 360 }}
+            transition={{ opacity: { duration: 2.8, repeat: Infinity, ease: 'easeInOut' }, rotate: { duration: 10, repeat: Infinity, ease: 'linear' } }}
           />
-          <Icon size={24} color={hue} className="relative" />
+          <Icon size={28} color="#fff" className="relative drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
         </div>
 
-        <span className="label-mono tabular-nums">
+        <span className="label-mono tabular-nums mb-3" style={{ color: hue }}>
           {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
         </span>
-      </div>
 
-      <h3 className="text-ink text-[31px] leading-[1.05] mb-3">{passion.name}</h3>
+        <h3 className="text-white text-[24px] leading-[1.1] mb-3 drop-shadow-md">{passion.name}</h3>
 
-      <p className="text-ink/65 text-[14px] leading-relaxed">{passion.desc}</p>
-
-      {/* Barre d'accent : rappel discret de la couleur du fragment. */}
-      <div className="mt-7 flex items-center gap-2">
-        <span className="h-px flex-1" style={{ background: `linear-gradient(90deg,${hue}88,transparent)` }} />
-        <span className="w-1 h-1 rounded-full" style={{ background: hue, boxShadow: `0 0 8px ${hue}` }} />
+        <p className="text-white/80 text-[13px] leading-relaxed line-clamp-4">{passion.desc}</p>
       </div>
     </div>
   );

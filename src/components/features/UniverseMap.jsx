@@ -135,9 +135,9 @@ function GlobeStage({ lat, lng, onArrive, tilt, reduced, tier }) {
   }, [lat, lng, onArrive]);
 
   return (
-    <div className="absolute inset-0 bg-void">
+    <div className="absolute inset-0 bg-void flex items-center justify-center">
       <div className="absolute inset-0 z-0">
-        <BlobShader color="rgba(201,168,106,1)" background="#0b0e13" scale={1.8} intensity={0.6} cameraZ={6} followMouse={true} />
+        <BlobShader color="rgba(201,168,106,1)" background="#0b0e13" scale={0.8} intensity={0.6} cameraZ={7.5} followMouse={false} />
       </div>
 
       {/* Container avec pointer-events-none pour ne pas bloquer les événements souris du blob */}

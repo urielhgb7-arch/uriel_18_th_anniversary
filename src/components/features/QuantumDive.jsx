@@ -51,7 +51,7 @@ export default function QuantumDive({ onComplete }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black overflow-hidden">
-      <GlassTunnel3D animationDuration={2.3} boxCount={5} circleCount={6} />
+      <GlassTunnel3D animationDuration={0.4} boxCount={5} circleCount={6} />
 
       {/* Flash d'entrée : l'instant où l'interface iOS se rompt. */}
       <motion.div

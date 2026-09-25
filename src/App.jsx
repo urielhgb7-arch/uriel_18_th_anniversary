@@ -53,14 +53,12 @@ function SoundIcon({ muted }) {
 
 export default function App() {
   const [stage, setStage] = useState(() => {
-    // Si l'utilisateur est déjà passé, on saute l'intro
-    return localStorage.getItem('has_unlocked') === 'true' ? 'MAP' : 'LOCK';
+    // Si l'utilisateur est déjà passé dans cet onglet, on saute l'intro
+    return sessionStorage.getItem('has_unlocked') === 'true' ? 'MAP' : 'LOCK';
   });
   /* Destination choisie sur l'écran d'appel, consommée à la fin du plongeon. */
   const [target, setTarget] = useState('MAP');
-  /* La préférence vient de localStorage : elle est disponible dès le premier
-     rendu, donc autant initialiser l'état directement. Passer par un effet
-     afficherait brièvement la mauvaise icône puis déclencherait un re-rendu. */
+  /* La préférence vient de localStorage (le son peut persister globalement) */
   const [muted, setMuted] = useState(initAudioPreference);
 
   // Filet de sécurité : quitter la page ne doit pas laisser un drone tourner.
@@ -72,7 +70,7 @@ export default function App() {
     if (urlParams.get('autoplay') === 'true') {
       const runAutoplay = async () => {
         // Si on a déjà déverrouillé, on est directement sur MAP, pas besoin d'autoplay
-        if (localStorage.getItem('has_unlocked') === 'true') {
+        if (sessionStorage.getItem('has_unlocked') === 'true') {
           return;
         }
         
@@ -87,7 +85,7 @@ export default function App() {
         await new Promise(resolve => setTimeout(resolve, 4000));
         
         // 4. On décroche automatiquement vers la carte (localisation)
-        localStorage.setItem('has_unlocked', 'true');
+        sessionStorage.setItem('has_unlocked', 'true');
         setTarget('MAP');
         setStage('DIVE');
       };
@@ -115,7 +113,7 @@ export default function App() {
 
   /* L'écran d'appel choisit la destination, le plongeon la sert. */
   const handlePick = useCallback((universe) => {
-    localStorage.setItem('has_unlocked', 'true');
+    sessionStorage.setItem('has_unlocked', 'true');
     setTarget(universe);
     setStage('DIVE');
   }, []);
