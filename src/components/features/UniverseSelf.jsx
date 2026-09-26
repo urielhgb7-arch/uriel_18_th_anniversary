@@ -247,9 +247,10 @@ export default function UniverseSelf({ onSwitch }) {
   const scroller = useRef(null);
   const fragmentsRef = useRef(null);
   const nebulaCanvas = useRef(null);
-  // Progression brute, lue par la nébuleuse sans passer par React.
   const scrollRatio = useRef(0);
   const [railProgress, setRailProgress] = useState(0);
+  
+  // Nouveau state : on bloque le reste tant que Gauntlet n'est pas passé
   const [snapped, setSnapped] = useState(false);
 
   const reduced = useReducedMotion();
@@ -258,7 +259,8 @@ export default function UniverseSelf({ onSwitch }) {
   const { mx, my } = useTiltMotion(tilt, !reduced);
 
   const { passions } = content;
-  const SECTIONS = passions.length + 4; // seuil + gantelet + fragments + énigmes + cta
+  // SECTIONS : intro + fragments + énigmes + cta
+  const SECTIONS = passions.length + 3; 
 
   useEffect(() => {
     startDrone(48);
@@ -266,17 +268,17 @@ export default function UniverseSelf({ onSwitch }) {
   }, []);
 
   useEffect(() => {
-    if (!nebulaCanvas.current || reduced) return;
+    // Si on n'a pas encore passé le Gauntlet, pas de nébuleuse pour le moment
+    if (!nebulaCanvas.current || reduced || !snapped) return;
     const handle = mountNebula(nebulaCanvas.current, { tier, tilt, scroll: scrollRatio });
     return () => handle?.destroy();
-  }, [tier, tilt, reduced]);
+  }, [tier, tilt, reduced, snapped]);
 
   useEffect(() => {
     const el = scroller.current;
-    if (!el) return;
+    if (!el || !snapped) return;
     let raf = 0;
     const onScroll = () => {
-      // rAF : le scroll émet plus vite que les frames, on n'en garde qu'une.
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
@@ -291,92 +293,86 @@ export default function UniverseSelf({ onSwitch }) {
       el.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(raf);
     };
-  }, []);
-
-  /* Le snap déverrouille le CTA mais n'y saute plus : le gantelet est désormais
-     en haut, donc tout le contenu est encore à venir. On enchaîne sur les
-     fragments — l'effondrement de la scène débouche sur la suite du récit. */
-  const snapTimer = useRef(0);
-  useEffect(() => () => clearTimeout(snapTimer.current), []);
+  }, [snapped]);
 
   const handleSnapComplete = () => {
     setSnapped(true);
-    snapTimer.current = setTimeout(() => {
-      fragmentsRef.current?.scrollIntoView({
-        behavior: reduced ? 'auto' : 'smooth',
-        block: 'start',
-      });
-    }, 900);
   };
 
   return (
     <div className="fixed inset-0 bg-void overflow-hidden">
-      {/* Fond fixe : la nébuleuse réagit au scroll mais ne défile pas. */}
-      {!reduced && <canvas ref={nebulaCanvas} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />}
-      <div
-        className="absolute inset-0 z-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 38%,rgba(201,168,106,0.09),transparent 64%)' }}
-      />
+      
+      {/* 
+        Écran 1 : Le Gauntlet (Scanner d'empreinte et portes de donjon) 
+        Il obstrue tout au début.
+      */}
+      {!snapped && (
+        <Gauntlet onComplete={handleSnapComplete} />
+      )}
 
-      <ScrollRail progress={railProgress} count={SECTIONS} />
-
-      <div
-        ref={scroller}
-        className="relative z-10 w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
-        <SelfIntro />
-
-        {/* Le gantelet EN HAUT. C'est la pièce maîtresse de cet univers : la
-            reléguer en fin de scroll revenait à ne jamais la montrer. Les six
-            pierres sont donc la première chose à faire, et ce qu'on y apprend
-            sur moi cadre la lecture de tout ce qui suit. */}
-        <section className="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 py-14">
-          <Gauntlet onComplete={handleSnapComplete} />
-        </section>
-
-        <div ref={fragmentsRef} />
-
-        {passions.map((passion, i) => (
-          <Fragment
-            key={passion.id}
-            passion={passion}
-            index={i}
-            total={passions.length}
-            scroller={scroller}
-            mx={mx}
-            my={my}
-            reduced={reduced}
-          />
-        ))}
-
-        {/* Énigmes : contenu interactif, donc stable à l'écran — pas de vol en Z
-            qui rendrait les boutons difficiles à viser. */}
-        <section className="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 py-16">
-          <Enigmas />
-        </section>
-
-        <section className="relative min-h-[100dvh] flex items-center justify-center px-5">
-          <FinalCTA unlocked={snapped} />
-        </section>
-      </div>
-
-      {/* Bascule vers l'autre univers. Plus de « retour » : le hub n'existe
-          plus, les deux univers communiquent directement. */}
-      <div className="absolute z-40 left-4 bottom-[calc(var(--safe-b)+1rem)]">
-        <button
-          onClick={() => {
-            playClick();
-            haptic(HAPTIC.soft);
-            onSwitch();
-          }}
-          className="px-4 h-10 rounded-full glass-nexus flex items-center justify-center gap-2 text-ink/80 active:text-ink transition-colors"
-          aria-label="Voir la localisation"
+      {/* Le reste du contenu n'est rendu/visible qu'une fois la porte ouverte */}
+      {snapped && (
+        <motion.div 
+          className="absolute inset-0 z-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
         >
-          <Map size={17} />
-          <span className="text-[13px] font-medium" style={{ fontFamily: 'var(--font-sans)' }}>Localisation</span>
-        </button>
-      </div>
+          {!reduced && <canvas ref={nebulaCanvas} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />}
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse at 50% 38%,rgba(201,168,106,0.09),transparent 64%)' }}
+          />
+
+          <ScrollRail progress={railProgress} count={SECTIONS} />
+
+          <div
+            ref={scroller}
+            className="relative z-10 w-full h-full overflow-y-auto overflow-x-hidden no-scrollbar"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <SelfIntro />
+
+            <div ref={fragmentsRef} />
+
+            {passions.map((passion, i) => (
+              <Fragment
+                key={passion.id}
+                passion={passion}
+                index={i}
+                total={passions.length}
+                scroller={scroller}
+                mx={mx}
+                my={my}
+                reduced={reduced}
+              />
+            ))}
+
+            <section className="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 py-16">
+              <Enigmas />
+            </section>
+
+            <section className="relative min-h-[100dvh] flex items-center justify-center px-5">
+              <FinalCTA unlocked={true} />
+            </section>
+          </div>
+
+          <div className="absolute z-40 left-4 bottom-[calc(var(--safe-b)+1rem)]">
+            <button
+              onClick={() => {
+                playClick();
+                haptic(HAPTIC.soft);
+                onSwitch();
+              }}
+              className="px-4 h-10 rounded-full glass-nexus flex items-center justify-center gap-2 text-ink/80 active:text-ink transition-colors"
+              aria-label="Voir la localisation"
+            >
+              <Map size={17} />
+              <span className="text-[13px] font-medium" style={{ fontFamily: 'var(--font-sans)' }}>Localisation</span>
+            </button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }

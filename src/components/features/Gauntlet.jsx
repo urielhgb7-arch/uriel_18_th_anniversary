@@ -1,28 +1,45 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, animate, useAnimation } from 'framer-motion';
 import { Fingerprint } from 'lucide-react';
-import { playBraam, playSnap, haptic, HAPTIC } from '../../lib/audio';
+import { playSnap, haptic, HAPTIC } from '../../lib/audio';
 
 const SEEN_KEY = 'uriel.snap.seen';
+const RING_TEXT = "URIEL • 18TH • ANNIVERSARY • ";
 
-function CircularText({ text, radius, speed, reverse }) {
+function CircularText({ text, radius, baseSpeed, reverse, scaleMV, speedMultiplierMV }) {
   const pathId = `circle-${radius}`;
   const d = `M ${radius + 20}, ${radius + 20} m -${radius}, 0 a ${radius},${radius} 0 1,1 ${radius * 2},0 a ${radius},${radius} 0 1,1 -${radius * 2},0`;
   
+  const rotateMV = useMotionValue(0);
+
+  useEffect(() => {
+    let raf;
+    let currentRotate = 0;
+    const loop = () => {
+      const dir = reverse ? -1 : 1;
+      // baseSpeed is degrees per frame (approx)
+      const speed = (baseSpeed * speedMultiplierMV.get()) * dir;
+      currentRotate += speed;
+      rotateMV.set(currentRotate);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [baseSpeed, reverse, speedMultiplierMV, rotateMV]);
+
   return (
     <motion.svg 
       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
       width={radius * 2 + 40} 
       height={radius * 2 + 40}
-      animate={{ rotate: reverse ? -360 : 360 }}
-      transition={{ duration: speed, repeat: Infinity, ease: 'linear' }}
+      style={{ rotate: rotateMV, scale: scaleMV }}
     >
       <defs>
         <path id={pathId} d={d} />
       </defs>
-      <text fill="rgba(255,255,255,0.25)" style={{ fontSize: '13px', letterSpacing: '0.15em', fontFamily: 'var(--font-display)', textTransform: 'uppercase' }}>
+      <text fill="rgba(201,168,106,0.12)" style={{ fontSize: '13px', letterSpacing: '0.25em', fontFamily: 'var(--font-display)', textTransform: 'uppercase' }}>
         <textPath href={`#${pathId}`} startOffset="0%">
-          {(text + ' • ').repeat(8)}
+          {text.repeat(15)}
         </textPath>
       </text>
     </motion.svg>
@@ -30,54 +47,53 @@ function CircularText({ text, radius, speed, reverse }) {
 }
 
 export default function Gauntlet({ onComplete }) {
-  const [progress, setProgress] = useState(0);
-  const [done, setDone] = useState(false);
-  const [flash, setFlash] = useState(false);
-  const intervalRef = useRef(null);
-  const completeRef = useRef(onComplete);
+  const [isCompleted, setIsCompleted] = useState(false);
+  
+  // Motion values pour une fluidité absolue (60fps hors cycle React)
+  const progressMV = useMotionValue(0);
+  const scaleMV = useTransform(progressMV, [0, 1], [1, 15]); // Les anneaux grandissent jusqu'à être aspirés hors champ
+  const speedMultiplierMV = useTransform(progressMV, [0, 1], [1, 30]); // L'accélération vertigineuse
+  
+  // Clip path pour le remplissage doré de l'empreinte
+  const fillClipPath = useTransform(progressMV, [0, 1], ["inset(100% 0 0 0)", "inset(0% 0 0 0)"]);
+  const dashOffset = useTransform(progressMV, [0, 1], [289, 0]);
 
-  useEffect(() => {
-    completeRef.current = onComplete;
-  }, [onComplete]);
-
-  // Option: accélérer si déjà vu
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(SEEN_KEY) === '1') {
-        // Optionnel : modifier la logique pour les utilisateurs récurrents
-      }
-    } catch {}
-  }, []);
+  // Contrôleurs pour l'animation d'ouverture (Portes de donjon)
+  const leftDoor = useAnimation();
+  const rightDoor = useAnimation();
+  const contentFade = useAnimation();
+  
+  const animationRef = useRef(null);
 
   const handlePointerDown = () => {
-    if (done) return;
+    if (isCompleted) return;
     haptic(HAPTIC.tap);
-    intervalRef.current = setInterval(() => {
-      setProgress((p) => {
-        const next = p + 2.5; // ~2 secondes
-        if (next >= 100) {
-          clearInterval(intervalRef.current);
-          triggerComplete();
-          return 100;
-        }
-        return next;
-      });
-    }, 50);
+    
+    // Animation extrêmement fluide de 0 à 1 (environ 2.2 secondes)
+    animationRef.current = animate(progressMV, 1, {
+      duration: 2.2,
+      ease: "easeIn",
+      onComplete: () => {
+        triggerDungeonDoors();
+      }
+    });
   };
 
   const handlePointerUp = () => {
-    if (done) return;
-    clearInterval(intervalRef.current);
-    if (progress < 100) {
-      setProgress(0);
+    if (isCompleted) return;
+    if (animationRef.current) {
+      animationRef.current.stop();
+    }
+    // Si pas terminé, on redescend doucement
+    if (progressMV.get() < 1) {
+      animate(progressMV, 0, { duration: 0.6, ease: "easeOut" });
       haptic(HAPTIC.soft);
     }
   };
 
-  const triggerComplete = () => {
-    if (done) return;
-    setDone(true);
-    setFlash(true);
+  const triggerDungeonDoors = () => {
+    if (isCompleted) return;
+    setIsCompleted(true);
     playSnap();
     haptic(HAPTIC.snap);
     
@@ -85,92 +101,105 @@ export default function Gauntlet({ onComplete }) {
       localStorage.setItem(SEEN_KEY, '1');
     } catch {}
 
+    // 1. Disparition du contenu central (aspiration)
+    contentFade.start({ 
+      opacity: 0, 
+      scale: 1.5,
+      transition: { duration: 0.4, ease: "easeIn" }
+    });
+
+    // 2. Ouverture des portes lourdes
+    leftDoor.start({ 
+      x: "-100%", 
+      transition: { duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.3 } 
+    });
+    rightDoor.start({ 
+      x: "100%", 
+      transition: { duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.3 } 
+    });
+
+    // 3. Notifier le parent pour afficher la suite sous les portes
     setTimeout(() => {
-      setFlash(false);
-      completeRef.current?.();
-    }, 900);
+      onComplete?.();
+    }, 600); // Déclenché pendant l'ouverture des portes
   };
 
-  useEffect(() => {
-    return () => clearInterval(intervalRef.current);
-  }, []);
-
   return (
-    <div className="relative w-full h-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-transparent touch-none flex items-center justify-center">
       
-      {/* Fond galaxie 3D CSS ultra-léger (ne laggera pas sur mobile) */}
-      <div className="absolute inset-0 pointer-events-none opacity-40">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(201,168,106,0.15)_0%,transparent_70%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(91,143,212,0.1)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(144,104,196,0.1)_0%,transparent_50%)]" />
-      </div>
+      {/* Portes de Donjon (Fond Noir qui s'ouvre en deux) */}
+      <motion.div 
+        animate={leftDoor}
+        className="absolute top-0 left-0 bottom-0 w-1/2 bg-[#0b0e13] border-r border-white/5 z-0"
+      />
+      <motion.div 
+        animate={rightDoor}
+        className="absolute top-0 right-0 bottom-0 w-1/2 bg-[#0b0e13] border-l border-white/5 z-0"
+      />
 
-      <AnimatePresence>
-        {flash && (
-          <motion.div
-            className="fixed inset-0 z-[90] bg-white pointer-events-none"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.8 } }}
-            transition={{ duration: 0.12 }}
-          />
-        )}
-      </AnimatePresence>
-
-      <div className="text-center mb-16 px-6 z-10">
-        <h2 className="text-ink text-[clamp(30px,9vw,42px)] leading-[1.05]">
-          Empreinte
-        </h2>
-        <p className="text-muted text-[13.5px] mt-3 max-w-[290px] mx-auto leading-relaxed">
-          Maintenez l'empreinte pour révéler mes facettes sous forme de galaxies.
-        </p>
-      </div>
-
-      {/* Zone centrale : Textes circulaires + Bouton */}
-      <div className="relative w-[320px] h-[320px] flex items-center justify-center z-10 mt-8">
+      <motion.div animate={contentFade} className="relative z-10 w-full h-full flex flex-col items-center justify-center pointer-events-none">
         
-        {/* Cercles de textes concentriques (réplique du design demandé) */}
-        <CircularText text="ESPRIT CRÉATIF ET ANALYTIQUE" radius={100} speed={30} reverse={false} />
-        <CircularText text="PASSIONNÉ D'INNOVATION" radius={135} speed={40} reverse={true} />
-        <CircularText text="EN QUÊTE DE NOUVELLES DÉCOUVERTES" radius={170} speed={50} reverse={false} />
+        <div className="text-center mb-16 px-6 z-20">
+          <h2 className="text-ink text-[clamp(32px,9vw,46px)] leading-[1.05] drop-shadow-lg">
+            Empreinte
+          </h2>
+          <p className="text-muted text-[14px] mt-3 max-w-[300px] mx-auto leading-relaxed">
+            Maintenez pour ouvrir la porte et révéler les galaxies.
+          </p>
+        </div>
 
-        {/* Bouton Empreinte */}
-        <motion.div
-          className="relative z-20 w-24 h-24 rounded-full flex items-center justify-center cursor-pointer touch-none"
-          style={{ background: 'rgba(20,20,27,0.9)', border: '1px solid rgba(201,168,106,0.3)', boxShadow: '0 0 40px rgba(201,168,106,0.15)' }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
-        >
-          {/* L'empreinte de base */}
-          <Fingerprint size={42} className="text-white/20 absolute" />
+        <div className="relative w-[320px] h-[320px] flex items-center justify-center z-20 mt-8 pointer-events-auto">
           
-          {/* L'empreinte qui se remplit (dorée) */}
-          <div 
-            className="absolute inset-0 flex items-center justify-center overflow-hidden transition-all duration-75"
-            style={{ clipPath: `inset(${100 - progress}% 0 0 0)` }}
-          >
-            <Fingerprint size={42} style={{ color: 'var(--color-accent)' }} />
-          </div>
+          {/* 5 Anneaux concentriques */}
+          <CircularText text={RING_TEXT} radius={110} baseSpeed={0.25} reverse={false} scaleMV={scaleMV} speedMultiplierMV={speedMultiplierMV} />
+          <CircularText text={RING_TEXT} radius={150} baseSpeed={0.20} reverse={true} scaleMV={scaleMV} speedMultiplierMV={speedMultiplierMV} />
+          <CircularText text={RING_TEXT} radius={195} baseSpeed={0.16} reverse={false} scaleMV={scaleMV} speedMultiplierMV={speedMultiplierMV} />
+          <CircularText text={RING_TEXT} radius={245} baseSpeed={0.13} reverse={true} scaleMV={scaleMV} speedMultiplierMV={speedMultiplierMV} />
+          <CircularText text={RING_TEXT} radius={300} baseSpeed={0.10} reverse={false} scaleMV={scaleMV} speedMultiplierMV={speedMultiplierMV} />
 
-          {/* Halo externe de progression */}
-          <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
-            <circle
-              cx="48"
-              cy="48"
-              r="46"
-              fill="none"
-              stroke="var(--color-accent)"
-              strokeWidth="2"
-              strokeDasharray="289"
-              strokeDashoffset={289 - (289 * progress) / 100}
-              className="transition-all duration-75"
-            />
-          </svg>
-        </motion.div>
-      </div>
+          {/* Bouton Empreinte */}
+          <motion.div
+            className="relative z-30 w-28 h-28 rounded-full flex items-center justify-center cursor-pointer"
+            style={{ 
+              background: 'rgba(11, 14, 19, 0.85)', 
+              border: '1px solid rgba(201,168,106,0.4)', 
+              boxShadow: '0 0 50px rgba(201,168,106,0.15)',
+              backdropFilter: 'blur(10px)'
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {/* L'empreinte de base */}
+            <Fingerprint size={48} className="text-white/20 absolute" />
+            
+            {/* L'empreinte qui se remplit (dorée) pilotée par motion */}
+            <motion.div 
+              className="absolute inset-0 flex items-center justify-center overflow-hidden"
+              style={{ clipPath: fillClipPath }}
+            >
+              <Fingerprint size={48} style={{ color: 'var(--color-accent)' }} />
+            </motion.div>
+
+            {/* Halo externe de progression */}
+            <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
+              <motion.circle
+                cx="56"
+                cy="56"
+                r="54"
+                fill="none"
+                stroke="var(--color-accent)"
+                strokeWidth="2.5"
+                strokeDasharray="339.29"
+                strokeDashoffset={dashOffset}
+              />
+            </svg>
+          </motion.div>
+        </div>
+      </motion.div>
     </div>
   );
 }
