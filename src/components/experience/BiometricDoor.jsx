@@ -16,7 +16,9 @@ export default function BiometricDoor({ onUnlock }) {
 
   useEffect(() => {
     // Setup initial SVG draw states
-    const circleLength = progressCircleRef.current.getTotalLength();
+    // We hardcode the circle length (2 * Math.PI * 66 = ~415) instead of getTotalLength()
+    // because getTotalLength() can crash or return 0 if the component is mounted while visibility: hidden
+    const circleLength = 415;
     gsap.set(progressCircleRef.current, { strokeDasharray: circleLength, strokeDashoffset: circleLength });
 
     // GSAP Timeline for Hold Action (2.5 seconds total)
