@@ -13,7 +13,7 @@ import { playChime, playError, playClick, haptic, HAPTIC } from '../../lib/audio
  * soit explicite.
  */
 
-export default function Enigmas() {
+export default function Enigmas({ onFinish }) {
   const { enigmas } = content;
   const [current, setCurrent] = useState(0);
   const [picked, setPicked] = useState(null); // index choisi, ou null
@@ -69,20 +69,24 @@ export default function Enigmas() {
         {!done ? (
           <motion.div
             key={current}
-            className="relative rounded-3xl p-6 overflow-hidden glass-nexus"
-            initial={{ opacity: 0, y: 22, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -14, scale: 0.98 }}
-            transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+            className="relative rounded-[2.5rem] p-8 overflow-hidden glass-nexus shadow-[0_20px_40px_-15px_rgba(0,0,0,0.4)]"
+            initial={{ opacity: 0, rotateX: 30, rotateY: -20, z: -400, scale: 0.8 }}
+            animate={{ opacity: 1, rotateX: 0, rotateY: 0, z: 0, scale: 1 }}
+            exit={{ opacity: 0, rotateX: -30, rotateY: 20, z: -400, scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 120, damping: 25, mass: 1.2 }}
+            style={{ perspective: 1200 }}
           >
+            {/* Effet Liquid Glass / Halo interne */}
+            <div className="absolute inset-0 rounded-[2.5rem] pointer-events-none border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]" />
+
             <motion.div
-              className="absolute left-0 right-0 h-px"
+              className="absolute left-0 right-0 h-px z-10"
               style={{
-                background: 'rgba(201,168,106,0.4)',
-                boxShadow: '0 0 9px rgba(201,168,106,0.8)',
+                background: 'rgba(201,168,106,0.3)',
+                boxShadow: '0 0 15px rgba(201,168,106,0.9)',
               }}
               animate={{ top: ['0%', '100%'] }}
-              transition={{ duration: 3.4, repeat: Infinity, ease: 'linear' }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
             />
 
             <div className="flex items-center justify-between mb-6">
@@ -106,41 +110,55 @@ export default function Enigmas() {
 
             <h3 className="text-ink text-[19px] leading-snug mb-7">{q.question}</h3>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3 relative z-20">
               {q.options.map((opt, i) => {
                 const isPicked = picked === i;
                 const isAnswer = i === q.answerIndex;
                 const revealed = picked !== null;
 
-                /* Juste / faux gardent une vraie couleur : c'est de
-                   l'information, pas de la décoration — la retirer rendrait le
-                   résultat illisible. Les deux teintes sont reprises des
-                   pierres (Temps et Réalité) pour rester dans la palette. */
-                let tone = 'border-ink/12 bg-ink/[0.04] text-ink/80';
+                let tone = 'border-white/10 bg-white/[0.02] text-white/80 hover:bg-white/[0.05] hover:border-white/20';
                 let icon = null;
 
                 if (revealed) {
                   if (isAnswer) {
-                    tone = 'border-[#4fae74] bg-[#4fae74]/12 text-[#7fc99b]';
-                    icon = <Check size={17} className="text-[#7fc99b] shrink-0" />;
+                    tone = 'border-[#4fae74] bg-[#4fae74]/15 text-[#7fc99b] shadow-[0_0_20px_rgba(79,174,116,0.2)]';
+                    icon = <Check size={18} className="text-[#7fc99b] shrink-0" />;
                   } else if (isPicked) {
-                    tone = 'border-[#d45b52] bg-[#d45b52]/12 text-[#e08b84]';
-                    icon = <X size={17} className="text-[#e08b84] shrink-0" />;
+                    tone = 'border-[#d45b52] bg-[#d45b52]/15 text-[#e08b84] shadow-[0_0_20px_rgba(212,91,82,0.2)]';
+                    icon = <X size={18} className="text-[#e08b84] shrink-0" />;
                   } else {
-                    tone = 'border-ink/8 bg-transparent text-ink/30';
+                    tone = 'border-ink/5 bg-transparent text-ink/20';
                   }
                 }
+
+                // Initial scatter positions
+                const scatterX = (i % 2 === 0 ? -1 : 1) * (50 + i * 20);
+                const scatterY = 50 + i * 15;
 
                 return (
                   <motion.button
                     key={opt}
                     onClick={() => choose(i)}
                     disabled={revealed}
-                    className={`w-full text-left p-4 rounded-2xl border flex items-center justify-between gap-3 transition-colors text-[14px] ${tone}`}
+                    initial={{ opacity: 0, x: scatterX, y: scatterY, rotateZ: (i - 1) * 10 }}
+                    animate={{ opacity: 1, x: 0, y: 0, rotateZ: 0 }}
+                    transition={{ 
+                      type: "spring", 
+                      stiffness: 150, 
+                      damping: 20, 
+                      delay: 0.1 + (i * 0.1) 
+                    }}
+                    className={`w-full text-left p-4 rounded-[1.25rem] border flex items-center justify-between gap-3 transition-all duration-300 text-[15px] ${tone} group`}
                     style={{ fontFamily: 'var(--font-mono)' }}
-                    whileTap={revealed ? undefined : { scale: 0.985 }}
+                    whileHover={revealed ? undefined : { scale: 1.02, x: 5 }}
+                    whileTap={revealed ? undefined : { scale: 0.98 }}
                   >
-                    <span className="leading-snug">{opt}</span>
+                    <span className="leading-snug relative">
+                      {opt}
+                      {!revealed && (
+                        <span className="absolute left-0 -bottom-1 w-0 h-[1px] bg-[var(--color-accent)] transition-all duration-300 group-hover:w-full opacity-0 group-hover:opacity-100" />
+                      )}
+                    </span>
                     {icon}
                   </motion.button>
                 );
@@ -150,48 +168,75 @@ export default function Enigmas() {
         ) : (
           <motion.div
             key="result"
-            className="rounded-3xl p-8 text-center flex flex-col items-center glass-nexus"
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+            className="rounded-[2.5rem] p-10 text-center flex flex-col items-center glass-nexus shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden"
+            initial={{ opacity: 0, scale: 0.9, rotateX: -20, z: -200 }}
+            animate={{ opacity: 1, scale: 1, rotateX: 0, z: 0 }}
+            transition={{ type: 'spring', stiffness: 100, damping: 25 }}
+            style={{ perspective: 1000 }}
           >
-            <div className="relative w-24 h-24 flex items-center justify-center mb-6">
+            {/* Cinematic background flare */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[var(--color-accent)]/10 blur-[50px] pointer-events-none" />
+
+            <div className="relative w-28 h-28 flex items-center justify-center mb-8">
               <motion.span
-                className="absolute inset-0 rounded-full border"
-                style={{ borderColor: 'rgba(201,168,106,0.5)' }}
+                className="absolute inset-0 rounded-full border border-t-[var(--color-accent)] border-r-transparent border-b-transparent border-l-[var(--color-accent)]"
                 animate={{ rotate: 360 }}
-                transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
               />
               <motion.span
-                className="absolute inset-2 rounded-full border border-dashed border-ink/25"
+                className="absolute inset-2 rounded-full border border-dashed border-white/20"
                 animate={{ rotate: -360 }}
-                transition={{ duration: 6.5, repeat: Infinity, ease: 'linear' }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
               />
+              {perfect && (
+                 <motion.div
+                   className="absolute inset-4 rounded-full bg-[var(--color-accent)]/20 blur-[15px]"
+                   animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                 />
+              )}
               <span
-                className="text-ink text-[30px] tabular-nums"
+                className="text-white text-[34px] tabular-nums drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] relative z-10"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 {score}/{enigmas.length}
               </span>
             </div>
 
-            <h3 className="text-ink text-[26px] mb-2.5">
-              {perfect ? 'Accès autorisé' : score > 0 ? 'Accès partiel' : 'Accès refusé'}
+            <h3 className={`text-[28px] mb-4 ${perfect ? 'text-[var(--color-accent)]' : 'text-white'}`}>
+              {perfect ? 'Accès autorisé.' : score > 0 ? 'Accès partiel.' : 'Accès refusé.'}
             </h3>
-            <p className="text-muted text-[13px] leading-relaxed max-w-[250px]">
+            
+            <p className="text-white/70 text-[15px] leading-relaxed max-w-[280px] font-mono">
               {perfect
-                ? 'Empreinte cognitive validée. Tu me connais vraiment.'
-                : 'Divergence détectée dans la timeline. Réessaie.'}
+                ? '"Tu as prouvé ta valeur. La singularité t\'attend au cœur du système."'
+                : 'Divergence détectée dans la timeline. Réinitialisation requise.'}
             </p>
 
-            {!perfect && (
+            {!perfect ? (
               <button
                 onClick={restart}
-                className="label-mono mt-7 flex items-center gap-2 px-5 py-3 rounded-xl bg-ink/5 active:bg-ink/10 transition-colors"
+                className="label-mono mt-10 flex items-center gap-2 px-6 py-3.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
               >
-                <RotateCcw size={13} />
+                <RotateCcw size={14} />
                 Recommencer
               </button>
+            ) : (
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                onClick={onFinish}
+                className="mt-10 group relative flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-white text-black font-semibold text-[15px] hover:scale-105 transition-all duration-300"
+              >
+                <span>Transcender</span>
+                <motion.div
+                  className="w-2 h-2 rounded-full bg-black"
+                  animate={{ scale: [1, 1.5, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+                <div className="absolute inset-0 rounded-full border border-white/50 shadow-[0_0_20px_rgba(255,255,255,0.3)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </motion.button>
             )}
           </motion.div>
         )}

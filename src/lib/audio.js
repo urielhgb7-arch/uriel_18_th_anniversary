@@ -143,47 +143,10 @@ export function stopRingtone() {
 
 // ── Effets cinématiques ──────────────────────────────────────────────────────
 
-/** Braam inversé : montée en tension pendant la chute quantique. */
 export function playDive(duration = 2.2) {
-  if (!live()) return;
-  const t0 = ctx.currentTime;
-
-  // Nappe de scies qui glisse vers l'aigu.
-  [55, 82.5, 110].forEach((base, i) => {
-    const osc = ctx.createOscillator();
-    const vca = ctx.createGain();
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.setValueAtTime(220, t0);
-    lp.frequency.exponentialRampToValueAtTime(3600, t0 + duration);
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(base, t0);
-    osc.frequency.exponentialRampToValueAtTime(base * 5, t0 + duration);
-    osc.detune.value = i * 7;
-    vca.gain.setValueAtTime(0.0001, t0);
-    vca.gain.exponentialRampToValueAtTime(0.16, t0 + duration * 0.8);
-    vca.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-    osc.connect(lp).connect(vca).connect(master);
-    osc.start(t0);
-    osc.stop(t0 + duration + 0.05);
-  });
-
-  // Souffle d'aspiration par-dessus.
-  const src = ctx.createBufferSource();
-  const bp = ctx.createBiquadFilter();
-  const vca = ctx.createGain();
-  src.buffer = noise();
-  src.loop = true;
-  bp.type = 'bandpass';
-  bp.Q.value = 1.2;
-  bp.frequency.setValueAtTime(300, t0);
-  bp.frequency.exponentialRampToValueAtTime(5000, t0 + duration);
-  vca.gain.setValueAtTime(0.0001, t0);
-  vca.gain.exponentialRampToValueAtTime(0.2, t0 + duration * 0.85);
-  vca.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-  src.connect(bp).connect(vca).connect(master);
-  src.start(t0);
-  src.stop(t0 + duration + 0.05);
+  const diveAudio = new Audio('/audio/dive.mp3');
+  diveAudio.volume = 0.5;
+  diveAudio.play().catch(e => console.log('Audio play blocked:', e));
 }
 
 /** Braam grave classique : impact dramatique (gantelet, révélations). */
@@ -206,7 +169,7 @@ export function playBraam(duration = 3.4) {
   });
 }
 
-/** Le claquement de doigts : transitoire sec + queue de bruit filtré. */
+/** Le claquement de doigts (ancien). Consolidé. */
 export function playSnap() {
   if (!live()) return;
   const t0 = ctx.currentTime;
@@ -222,6 +185,49 @@ export function playSnap() {
   src.start(t0);
   src.stop(t0 + 0.2);
   tone({ freq: 2400, dur: 0.05, type: 'triangle', gain: 0.3 });
+}
+
+/** Bruit lourd de portes de donjon en pierre qui s'ouvrent. */
+export function playDoorOpen(duration = 2.5) {
+  if (!live()) return;
+  const t0 = ctx.currentTime;
+  
+  // Grondement de pierre (bruit rose filtré)
+  const src = ctx.createBufferSource();
+  const lp = ctx.createBiquadFilter();
+  const vca = ctx.createGain();
+  
+  src.buffer = noise();
+  src.loop = true;
+  
+  lp.type = 'lowpass';
+  lp.Q.value = 3;
+  lp.frequency.setValueAtTime(80, t0);
+  lp.frequency.linearRampToValueAtTime(250, t0 + duration * 0.4);
+  lp.frequency.exponentialRampToValueAtTime(40, t0 + duration);
+
+  vca.gain.setValueAtTime(0.0001, t0);
+  vca.gain.linearRampToValueAtTime(0.8, t0 + 0.3);
+  vca.gain.linearRampToValueAtTime(0.6, t0 + duration - 0.5);
+  vca.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+
+  src.connect(lp).connect(vca).connect(master);
+  src.start(t0);
+  src.stop(t0 + duration + 0.1);
+  
+  // Résonance grave
+  [40, 55].forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    const ovca = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = f;
+    ovca.gain.setValueAtTime(0.0001, t0);
+    ovca.gain.linearRampToValueAtTime(0.3 / (i + 1), t0 + 0.4);
+    ovca.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(ovca).connect(master);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.1);
+  });
 }
 
 /** Whoosh de transition (ouverture de portail, changement de scène). */
@@ -253,8 +259,9 @@ export function playClick() {
 
 /** Tick de scan/compteur : très court, très discret. */
 export function playTick() {
-  if (!live()) return;
-  tone({ freq: 2100, dur: 0.028, type: 'square', gain: 0.035 });
+  const tickAudio = new Audio('/audio/tick.wav');
+  tickAudio.volume = 0.2;
+  tickAudio.play().catch(e => console.log('Audio play blocked:', e));
 }
 
 /** Pierre débloquée / bonne réponse : quinte montante. */
@@ -324,6 +331,27 @@ export function stopDrone() {
   if (stop) {
     stop();
     voices.delete('drone');
+  }
+}
+
+let immersiveAudio = null;
+
+/** Musique d'ambiance sobre et immersive avec le dernier fichier téléchargé */
+export function startImmersiveMusic() {
+  if (muted || immersiveAudio) return;
+  
+  immersiveAudio = new Audio('/audio/bg_music.mp3');
+  immersiveAudio.loop = true;
+  immersiveAudio.volume = 0.5; // Ajuste le volume selon le besoin
+  immersiveAudio.play().catch(e => console.log('Audio play blocked:', e));
+}
+
+export function stopImmersiveMusic() {
+  if (immersiveAudio) {
+    // Fade out simple ou arrêt brutal
+    immersiveAudio.pause();
+    immersiveAudio.currentTime = 0;
+    immersiveAudio = null;
   }
 }
 

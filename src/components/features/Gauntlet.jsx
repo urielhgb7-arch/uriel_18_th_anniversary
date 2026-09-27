@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate, useAnimation } from 'framer-motion';
 import { Fingerprint } from 'lucide-react';
-import { playSnap, haptic, HAPTIC } from '../../lib/audio';
+import { playDoorOpen, startImmersiveMusic, haptic, HAPTIC } from '../../lib/audio';
 
 const SEEN_KEY = 'uriel.snap.seen';
 const RING_TEXT = "URIEL • 18TH • ANNIVERSARY • ";
@@ -94,7 +94,11 @@ export default function Gauntlet({ onComplete }) {
   const triggerDungeonDoors = () => {
     if (isCompleted) return;
     setIsCompleted(true);
-    playSnap();
+    
+    // Jouer le bruit lourd des portes de pierre
+    playDoorOpen();
+    // Lancer la musique d'ambiance immersive pour le reste de l'expérience
+    startImmersiveMusic();
     haptic(HAPTIC.snap);
     
     try {
