@@ -68,7 +68,7 @@ export default function MultiverseContainer({ activeApp, isSwitcherOpen, setIsSw
                 scale: isSwitcherOpen ? 1 : (isActive ? 1 : 0.95),
               }}
               style={{
-                display: isVisible ? 'block' : 'none',
+                visibility: isVisible ? 'visible' : 'hidden',
                 zIndex: isActive && !isSwitcherOpen ? 10 : 1
               }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
