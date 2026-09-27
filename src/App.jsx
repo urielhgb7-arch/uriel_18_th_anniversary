@@ -3,11 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import LockScreen from './components/features/LockScreen';
 import IncomingCall from './components/features/IncomingCall';
 import QuantumDive from './components/features/QuantumDive';
-import UniverseMap from './components/features/UniverseMap';
-import UniverseSelf from './components/features/UniverseSelf';
-import ContactExperience from './components/features/ContactExperience';
+import MultiverseContainer from './components/layout/MultiverseContainer';
 import DynamicIsland from './components/layout/DynamicIsland';
-import AppSwitcher from './components/layout/AppSwitcher';
 import {
   initAudioPreference,
   setMuted as setAudioMuted,
@@ -36,7 +33,7 @@ import './index.css';
  * seconde.
  */
 
-const STAGES_WITH_CHROME = new Set(['MAP', 'SELF', 'CONTACT']);
+const STAGES_WITH_CHROME = new Set(['MAP', 'SELF']);
 
 function SoundIcon({ muted }) {
   return (
@@ -137,7 +134,7 @@ export default function App() {
 
   return (
     <div className="relative w-full min-h-[100dvh] bg-void overflow-hidden">
-      {/* Dynamic Island — navigation globale (MAP / SELF / CONTACT) */}
+      {/* Dynamic Island — navigation globale (MAP / SELF) */}
       <AnimatePresence>
         {STAGES_WITH_CHROME.has(stage) && !isSwitcherOpen && (
           <DynamicIsland
@@ -149,37 +146,9 @@ export default function App() {
               playWhoosh();
               setStage(dest);
             }}
-            onOpenSwitcher={() => setIsSwitcherOpen(true)}
           />
         )}
       </AnimatePresence>
-
-      {/* Switcher façon iOS multitâche */}
-      <AnimatePresence>
-        {isSwitcherOpen && (
-          <AppSwitcher
-            key="switcher"
-            activeApp={stage}
-            onClose={() => setIsSwitcherOpen(false)}
-            onSelect={(newTarget) => {
-              setIsSwitcherOpen(false);
-              playWhoosh();
-              setStage(newTarget);
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Main View Container, scales down when Switcher is open */}
-      <motion.div 
-        animate={{ 
-          scale: isSwitcherOpen ? 0.9 : 1, 
-          opacity: isSwitcherOpen ? 0.4 : 1,
-          filter: isSwitcherOpen ? 'blur(4px)' : 'blur(0px)'
-        }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full h-full absolute inset-0"
-      >
 
       <AnimatePresence mode="wait">
         {stage === 'LOCK' && (
@@ -209,46 +178,43 @@ export default function App() {
           </motion.div>
         )}
 
-        {stage === 'MAP' && (
+        {(stage === 'MAP' || stage === 'SELF') && (
           <motion.div
-            key="map"
+            key="multiverse"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6 }}
-            className="w-full"
+            className="absolute inset-0 w-full h-full"
           >
-            <UniverseMap onSwitch={goSelf} />
-          </motion.div>
-        )}
-
-        {stage === 'SELF' && (
-          <motion.div
-            key="self"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-            className="w-full h-full"
-          >
-            <UniverseSelf onSwitch={() => setIsSwitcherOpen(true)} />
-          </motion.div>
-        )}
-
-        {stage === 'CONTACT' && (
-          <motion.div
-            key="contact"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full h-full"
-          >
-            <ContactExperience />
+            <MultiverseContainer 
+               activeApp={stage}
+               isSwitcherOpen={isSwitcherOpen}
+               setIsSwitcherOpen={setIsSwitcherOpen}
+               setStage={setStage}
+            />
           </motion.div>
         )}
       </AnimatePresence>
-      </motion.div>
+
+      {/* iOS Home Indicator (Trait du bas pour naviguer) */}
+      <AnimatePresence>
+        {STAGES_WITH_CHROME.has(stage) && !isSwitcherOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-2 left-1/2 -translate-x-1/2 z-[100] w-32 h-6 flex items-end justify-center cursor-pointer group"
+            onClick={() => {
+              playWhoosh();
+              haptic(HAPTIC.light);
+              setIsSwitcherOpen(true);
+            }}
+          >
+            <div className="w-1/2 h-1 bg-white/40 rounded-full group-hover:bg-white/80 transition-colors" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

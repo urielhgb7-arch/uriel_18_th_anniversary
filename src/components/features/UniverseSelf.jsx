@@ -6,7 +6,7 @@ import BiometricDoor from '../experience/BiometricDoor';
 import QuantumPlunge from '../experience/QuantumPlunge';
 import HobbiesCarousel from './HobbiesCarousel';
 import Enigmas from './Enigmas';
-import FinalCTA from './FinalCTA';
+import ContactExperience from './ContactExperience';
 
 export default function UniverseSelf({ onSwitch }) {
   const [stage, setStage] = useState('DOOR'); // 'DOOR' -> 'PLUNGE' -> 'HOBBIES' -> 'QUIZ' -> 'CTA'
@@ -50,7 +50,7 @@ export default function UniverseSelf({ onSwitch }) {
         {stage === 'CTA' && (
           <motion.div key="cta" className="absolute inset-0 overflow-y-auto no-scrollbar" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
              <section className="relative min-h-[100dvh] flex items-center justify-center px-5">
-              <FinalCTA unlocked={true} />
+              <ContactExperience />
             </section>
           </motion.div>
         )}

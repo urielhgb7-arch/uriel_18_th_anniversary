@@ -19,15 +19,7 @@ const CARDS = [
     Icon: Fingerprint,
     accent: '#c9a86a',        // gold
     bg: 'from-amber-900/30 to-void',
-  },
-  {
-    id: 'CONTACT',
-    label: 'Événement',
-    sub: 'Créer mon expérience',
-    Icon: Zap,
-    accent: '#a78bfa',        // purple-400
-    bg: 'from-purple-900/30 to-void',
-  },
+  }
 ];
 
 export default function AppSwitcher({ activeApp, onSelect, onClose }) {
