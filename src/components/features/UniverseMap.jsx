@@ -351,20 +351,6 @@ function GroundStage({ lat, lng, name, venue, onSwitch }) {
                 Lancer l'itinéraire
               </motion.button>
 
-              {/* Action secondaire : volontairement basse en contraste, petite,
-                  et sans fond. Elle ne doit jamais entrer en concurrence avec
-                  celle du dessus. */}
-              <button
-                onClick={() => {
-                  playWhoosh();
-                  haptic(HAPTIC.soft);
-                  onSwitch();
-                }}
-                className="label-mono w-full flex items-center justify-center gap-2 py-[16px] mt-3 bg-white/5 border border-white/10 rounded-2xl active:bg-white/10 transition-colors text-ink/80 hover:text-ink"
-              >
-                <Sparkles size={14} />
-                Me connaître
-              </button>
             </motion.div>
           </>
         )}
@@ -387,7 +373,7 @@ export default function UniverseMap({ onSwitch }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-void">
+    <div className="absolute inset-0 w-full h-full overflow-hidden bg-void">
       <AnimatePresence mode="wait">
         {stage === 'GLOBE' ? (
           <motion.div key="globe" className="absolute inset-0" exit={{ opacity: 0, scale: 1.08 }} transition={{ duration: 0.9 }}>

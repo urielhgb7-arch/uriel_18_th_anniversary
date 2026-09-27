@@ -5,6 +5,9 @@ import IncomingCall from './components/features/IncomingCall';
 import QuantumDive from './components/features/QuantumDive';
 import UniverseMap from './components/features/UniverseMap';
 import UniverseSelf from './components/features/UniverseSelf';
+import ContactExperience from './components/features/ContactExperience';
+import DynamicIsland from './components/layout/DynamicIsland';
+import AppSwitcher from './components/layout/AppSwitcher';
 import {
   initAudioPreference,
   setMuted as setAudioMuted,
@@ -33,7 +36,7 @@ import './index.css';
  * seconde.
  */
 
-const STAGES_WITH_CHROME = new Set(['MAP', 'SELF']);
+const STAGES_WITH_CHROME = new Set(['MAP', 'SELF', 'CONTACT']);
 
 function SoundIcon({ muted }) {
   return (
@@ -56,10 +59,12 @@ export default function App() {
     // Si l'utilisateur est déjà passé dans cet onglet, on saute l'intro
     return sessionStorage.getItem('has_unlocked') === 'true' ? 'MAP' : 'LOCK';
   });
-  /* Destination choisie sur l'écran d'appel, consommée à la fin du plongeon. */
+  /* La destination choisie sur l'écran d'appel, consommée à la fin du plongeon. */
   const [target, setTarget] = useState('MAP');
   /* La préférence vient de localStorage (le son peut persister globalement) */
   const [muted, setMuted] = useState(initAudioPreference);
+  /* État du Switcher global */
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 
   // Filet de sécurité : quitter la page ne doit pas laisser un drone tourner.
   useEffect(() => () => stopAll(), []);
@@ -132,27 +137,49 @@ export default function App() {
 
   return (
     <div className="relative w-full min-h-[100dvh] bg-void overflow-hidden">
-      {/* Le bouton son n'apparaît qu'après le plongeon : sur l'écran verrouillé
-          et pendant l'appel, il n'existe pas sur un vrai téléphone. */}
+      {/* Dynamic Island — navigation globale (MAP / SELF / CONTACT) */}
       <AnimatePresence>
-        {STAGES_WITH_CHROME.has(stage) && (
-          <motion.button
-            key="mute"
-            onClick={toggleMute}
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ duration: 0.4 }}
-            className="fixed z-[60] right-4 top-[calc(var(--safe-t)+1rem)] w-10 h-10 rounded-full
-                       glass-nexus flex items-center justify-center text-white/70
-                       transition-transform active:scale-95"
-            aria-label={muted ? 'Activer le son' : 'Couper le son'}
-            aria-pressed={muted}
-          >
-            <SoundIcon muted={muted} />
-          </motion.button>
+        {STAGES_WITH_CHROME.has(stage) && !isSwitcherOpen && (
+          <DynamicIsland
+            key="island"
+            muted={muted}
+            activeApp={stage}
+            onToggleMute={toggleMute}
+            onNavigate={(dest) => {
+              playWhoosh();
+              setStage(dest);
+            }}
+            onOpenSwitcher={() => setIsSwitcherOpen(true)}
+          />
         )}
       </AnimatePresence>
+
+      {/* Switcher façon iOS multitâche */}
+      <AnimatePresence>
+        {isSwitcherOpen && (
+          <AppSwitcher
+            key="switcher"
+            activeApp={stage}
+            onClose={() => setIsSwitcherOpen(false)}
+            onSelect={(newTarget) => {
+              setIsSwitcherOpen(false);
+              playWhoosh();
+              setStage(newTarget);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Main View Container, scales down when Switcher is open */}
+      <motion.div 
+        animate={{ 
+          scale: isSwitcherOpen ? 0.9 : 1, 
+          opacity: isSwitcherOpen ? 0.4 : 1,
+          filter: isSwitcherOpen ? 'blur(4px)' : 'blur(0px)'
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="w-full h-full absolute inset-0"
+      >
 
       <AnimatePresence mode="wait">
         {stage === 'LOCK' && (
@@ -202,12 +229,26 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6 }}
-            className="w-full"
+            className="w-full h-full"
           >
-            <UniverseSelf onSwitch={goMap} />
+            <UniverseSelf onSwitch={() => setIsSwitcherOpen(true)} />
+          </motion.div>
+        )}
+
+        {stage === 'CONTACT' && (
+          <motion.div
+            key="contact"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full h-full"
+          >
+            <ContactExperience />
           </motion.div>
         )}
       </AnimatePresence>
+      </motion.div>
     </div>
   );
 }

@@ -12,7 +12,7 @@ export default function UniverseSelf({ onSwitch }) {
   const [stage, setStage] = useState('DOOR'); // 'DOOR' -> 'PLUNGE' -> 'HOBBIES' -> 'QUIZ' -> 'CTA'
 
   return (
-    <div className="fixed inset-0 bg-void overflow-hidden">
+    <div className="absolute inset-0 w-full h-full bg-void overflow-hidden">
       
       <AnimatePresence mode="wait">
         
@@ -57,21 +57,6 @@ export default function UniverseSelf({ onSwitch }) {
 
       </AnimatePresence>
 
-      {/* Bascule vers l'autre univers (Carte) */}
-      <div className="absolute z-40 left-4 bottom-[calc(var(--safe-b)+1rem)]">
-        <button
-          onClick={() => {
-            playClick();
-            haptic(HAPTIC.soft);
-            onSwitch();
-          }}
-          className="px-4 h-10 rounded-full glass-nexus flex items-center justify-center gap-2 text-ink/80 active:text-ink transition-colors"
-          aria-label="Voir la localisation"
-        >
-          <Map size={17} />
-          <span className="text-[13px] font-medium" style={{ fontFamily: 'var(--font-sans)' }}>Localisation</span>
-        </button>
-      </div>
     </div>
   );
 }
