@@ -144,9 +144,7 @@ export function stopRingtone() {
 // ── Effets cinématiques ──────────────────────────────────────────────────────
 
 export function playDive(duration = 2.2) {
-  const diveAudio = new Audio('/audio/dive.mp3');
-  diveAudio.volume = 0.5;
-  diveAudio.play().catch(e => console.log('Audio play blocked:', e));
+  // Désactivé comme demandé
 }
 
 /** Braam grave classique : impact dramatique (gantelet, révélations). */
@@ -259,9 +257,7 @@ export function playClick() {
 
 /** Tick de scan/compteur : très court, très discret. */
 export function playTick() {
-  const tickAudio = new Audio('/audio/tick.wav');
-  tickAudio.volume = 0.2;
-  tickAudio.play().catch(e => console.log('Audio play blocked:', e));
+  // Désactivé comme demandé
 }
 
 /** Pierre débloquée / bonne réponse : quinte montante. */

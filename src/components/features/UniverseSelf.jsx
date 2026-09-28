@@ -8,7 +8,7 @@ import HobbiesCarousel from './HobbiesCarousel';
 import Enigmas from './Enigmas';
 import ContactExperience from './ContactExperience';
 
-export default function UniverseSelf({ onSwitch }) {
+export default function UniverseSelf({ onSwitch, isActive }) {
   const [stage, setStage] = useState('DOOR'); // 'DOOR' -> 'PLUNGE' -> 'HOBBIES' -> 'QUIZ' -> 'CTA'
 
   return (
@@ -19,7 +19,7 @@ export default function UniverseSelf({ onSwitch }) {
         {/* Écran 1 : La porte d'entrée Biométrique (Scanner) */}
         {stage === 'DOOR' && (
           <motion.div key="door" exit={{ opacity: 0 }} transition={{ duration: 1.5 }} className="w-full h-full">
-            <BiometricDoor onUnlock={() => setStage('PLUNGE')} />
+            <BiometricDoor isActive={isActive} onUnlock={() => setStage('PLUNGE')} />
           </motion.div>
         )}
 

@@ -64,7 +64,7 @@ export default function MultiverseContainer({ activeApp, isSwitcherOpen, setIsSw
               initial={false}
               animate={{
                 opacity: isVisible ? 1 : 0,
-                pointerEvents: isSwitcherOpen || !isActive ? 'none' : 'auto',
+                pointerEvents: isSwitcherOpen || isActive ? 'auto' : 'none',
                 scale: isSwitcherOpen ? 1 : (isActive ? 1 : 0.95),
               }}
               style={{
@@ -78,12 +78,12 @@ export default function MultiverseContainer({ activeApp, isSwitcherOpen, setIsSw
                 className="absolute origin-top-left"
                 style={{
                   width: '100vw', 
-                  height: '100dvh',
+                  height: '100vh',
                   transform: isSwitcherOpen ? 'scale(0.75)' : 'scale(1)', // 75vw / 100vw = 0.75
                   pointerEvents: isSwitcherOpen ? 'none' : 'auto'
                 }}
               >
-                <Component onSwitch={() => setIsSwitcherOpen(true)} />
+                <Component isActive={isActive} onSwitch={() => setIsSwitcherOpen(true)} />
               </div>
 
               {/* Overlay interactif quand on est dans le Switcher */}

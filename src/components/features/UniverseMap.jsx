@@ -101,11 +101,13 @@ function Telemetry({ lat, lng, progress }) {
 import { BlobShader } from '../blob-organique-3d';
 
 /** Étape 1 : globe 3D (remplacé par Blob organique 3D). */
-function GlobeStage({ lat, lng, onArrive, tilt, reduced, tier }) {
+function GlobeStage({ lat, lng, onArrive, tilt, reduced, tier, isActive }) {
   const [phase, setPhase] = useState(0);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    if (!isActive) return;
+    
     let cancelled = false;
     const t0 = performance.now();
 
@@ -132,7 +134,7 @@ function GlobeStage({ lat, lng, onArrive, tilt, reduced, tier }) {
       clearTimeout(phase1);
       clearTimeout(phase2);
     };
-  }, [lat, lng, onArrive]);
+  }, [lat, lng, onArrive, isActive]);
 
   return (
     <div className="absolute inset-0 bg-void flex items-center justify-center">
@@ -359,7 +361,7 @@ function GroundStage({ lat, lng, name, venue, onSwitch }) {
   );
 }
 
-export default function UniverseMap({ onSwitch }) {
+export default function UniverseMap({ onSwitch, isActive }) {
   const { lat, lng, name, venue } = content.event.location;
   const [stage, setStage] = useState('GLOBE');
   const reduced = useReducedMotion();
@@ -384,6 +386,7 @@ export default function UniverseMap({ onSwitch }) {
               reduced={reduced}
               tier={tier}
               onArrive={handleArrive}
+              isActive={isActive}
             />
           </motion.div>
         ) : (

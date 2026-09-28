@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import { Fingerprint } from 'lucide-react';
 import { haptic, HAPTIC, startImmersiveMusic, playTick } from '../../lib/audio';
 
-export default function BiometricDoor({ onUnlock }) {
+export default function BiometricDoor({ onUnlock, isActive = true }) {
   const containerRef = useRef(null);
   const ring1Ref = useRef(null);
   const ring2Ref = useRef(null);
@@ -15,6 +15,8 @@ export default function BiometricDoor({ onUnlock }) {
   const holdTimelineRef = useRef(null);
 
   useEffect(() => {
+    if (!isActive) return;
+
     // Setup initial SVG draw states
     // We hardcode the circle length (2 * Math.PI * 66 = ~415) instead of getTotalLength()
     // because getTotalLength() can crash or return 0 if the component is mounted while visibility: hidden
@@ -39,13 +41,13 @@ export default function BiometricDoor({ onUnlock }) {
     return () => {
       tl.kill();
     };
-  }, []);
+  }, [isActive]);
 
   useEffect(() => {
     if (isPressing) {
-      holdTimelineRef.current.play();
+      holdTimelineRef.current?.play();
     } else {
-      holdTimelineRef.current.reverse();
+      holdTimelineRef.current?.reverse();
     }
   }, [isPressing]);
 
