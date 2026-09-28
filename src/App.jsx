@@ -133,7 +133,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="relative w-full min-h-[100dvh] bg-void overflow-hidden">
+    <div className="relative w-full min-h-screen bg-void overflow-hidden">
       {/* Dynamic Island — navigation globale (MAP / SELF) */}
       <AnimatePresence>
         {STAGES_WITH_CHROME.has(stage) && !isSwitcherOpen && (

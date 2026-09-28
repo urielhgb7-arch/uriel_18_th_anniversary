@@ -58,7 +58,7 @@ export default function MultiverseContainer({ activeApp, isSwitcherOpen, setIsSw
                 shrink-0 relative overflow-hidden transition-all origin-center
                 ${isSwitcherOpen 
                   ? 'snap-center w-[75vw] md:w-[35vw] max-w-[400px] h-[75dvh] rounded-[2.5rem] cursor-pointer shadow-2xl' 
-                  : 'absolute inset-0 w-full h-[100dvh] rounded-none'
+                  : 'absolute inset-0 w-full h-screen rounded-none'
                 }
               `}
               initial={false}

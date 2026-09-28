@@ -40,7 +40,7 @@ export default function UniverseSelf({ onSwitch, isActive }) {
         {/* Écran 4 : Le Quiz */}
         {stage === 'QUIZ' && (
           <motion.div key="quiz" className="absolute inset-0 overflow-y-auto no-scrollbar">
-            <section className="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 py-16">
+            <section className="relative min-h-screen flex flex-col items-center justify-center px-5 py-16">
               <Enigmas onFinish={() => setStage('CTA')} />
             </section>
           </motion.div>
@@ -49,7 +49,7 @@ export default function UniverseSelf({ onSwitch, isActive }) {
         {/* Écran 5 : CTA Final */}
         {stage === 'CTA' && (
           <motion.div key="cta" className="absolute inset-0 overflow-y-auto no-scrollbar" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-             <section className="relative min-h-[100dvh] flex items-center justify-center px-5">
+             <section className="relative min-h-screen flex items-center justify-center px-5">
               <ContactExperience />
             </section>
           </motion.div>
