@@ -72,7 +72,6 @@ export default function BiometricDoor({ onUnlock }) {
     tl.to([ring1Ref.current, ring2Ref.current, ring3Ref.current, progressCircleRef.current, fingerprintRef.current], {
       scale: 0.1,
       opacity: 0,
-      translateZ: -1500,
       duration: 1.2,
       ease: "power4.inOut"
     });
@@ -84,7 +83,7 @@ export default function BiometricDoor({ onUnlock }) {
     <div 
       ref={containerRef}
       className="relative w-full h-full flex items-center justify-center overflow-hidden touch-none"
-      style={{ perspective: '1000px', backgroundColor: '#06060a' }}
+      style={{ backgroundColor: '#06060a' }}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
     >
@@ -92,7 +91,7 @@ export default function BiometricDoor({ onUnlock }) {
       <div 
         ref={ring3Ref}
         className="absolute flex items-center justify-center opacity-20 blur-[3px]"
-        style={{ transform: 'translateZ(-400px) scale(0.5)' }}
+        style={{ transform: 'scale(0.35)' }}
       >
         <svg viewBox="0 0 500 500" width="1000" height="1000" fill="none" className="pointer-events-none" style={{ color: '#c9a86a' }}>
           <path id="text-path-3" d="M 250, 250 m -240, 0 a 240,240 0 1,1 480,0 a 240,240 0 1,1 -480,0" />
@@ -106,7 +105,7 @@ export default function BiometricDoor({ onUnlock }) {
       <div 
         ref={ring2Ref}
         className="absolute flex items-center justify-center opacity-40 blur-[1px]"
-        style={{ transform: 'translateZ(-200px) scale(0.8)' }}
+        style={{ transform: 'scale(0.65)' }}
       >
         <svg viewBox="0 0 500 500" width="700" height="700" fill="none" className="pointer-events-none" style={{ color: '#c9a86a' }}>
           <path id="text-path-2" d="M 250, 250 m -200, 0 a 200,200 0 1,1 400,0 a 200,200 0 1,1 -400,0" />
@@ -120,7 +119,7 @@ export default function BiometricDoor({ onUnlock }) {
       <div 
         ref={ring1Ref}
         className="absolute flex items-center justify-center opacity-80"
-        style={{ transform: 'translateZ(-50px) scale(1.1)' }}
+        style={{ transform: 'scale(1.05)' }}
       >
         <svg viewBox="0 0 500 500" width="500" height="500" fill="none" className="pointer-events-none" style={{ color: '#f2f2f0' }}>
           <path id="text-path-1" d="M 250, 250 m -160, 0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0" />
@@ -133,7 +132,7 @@ export default function BiometricDoor({ onUnlock }) {
       {/* Capteur d'empreinte (Centre Absolu) */}
       <div 
         className="relative z-10 flex items-center justify-center cursor-pointer touch-none"
-        style={{ transform: 'translateZ(50px)' }}
+        style={{ transform: 'scale(1.1)' }}
         onPointerDown={handlePointerDown}
       >
         <svg width="140" height="140" viewBox="0 0 140 140" className="absolute pointer-events-none">

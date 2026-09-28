@@ -56,37 +56,7 @@ const GlassTunnel3D = ({
              `
            }} />
       
-      {/* SVG Filter */}
-      <svg className="hidden">
-        <defs>
-          <filter id="wave-distort" x="0%" y="0%" width="100%" height="100%">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.0038 0.0038"
-              numOctaves="1"
-              seed="2"
-              result="roughNoise"
-            />
-            <feGaussianBlur in="roughNoise" stdDeviation="8.5" result="softNoise" />
-            <feComposite
-              operator="arithmetic"
-              k1="0"
-              k2="1"
-              k3="2"
-              k4="0"
-              in="softNoise"
-              result="mergedMap"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="mergedMap"
-              scale="-42"
-              xChannelSelector="G"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
+      {/* SVG Filter was removed for mobile GPU optimization (feTurbulence causes crashes/black screens) */}
       
       {/* Scene Container */}
       <div 
@@ -115,7 +85,8 @@ const GlassTunnel3D = ({
                 key={face}
                 className={`absolute bg-black bg-opacity-60 glass-${face}`}
                 style={{ 
-                  backdropFilter: 'url(#wave-distort)',
+                  backdropFilter: 'blur(12px) brightness(1.1)',
+                  WebkitBackdropFilter: 'blur(12px) brightness(1.1)',
                   ...(face === 'front' || face === 'back' ? {
                     width: 'var(--w)',
                     height: 'var(--h)',

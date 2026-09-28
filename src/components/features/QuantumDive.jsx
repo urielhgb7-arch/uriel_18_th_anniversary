@@ -23,11 +23,6 @@ export default function QuantumDive({ onComplete }) {
       onComplete();
     };
 
-    if (reduced) {
-      const t = setTimeout(finish, 520);
-      return () => clearTimeout(t);
-    }
-
     playDive(DURATION / 1000);
     haptic(HAPTIC.impact);
 
@@ -38,16 +33,8 @@ export default function QuantumDive({ onComplete }) {
     };
   }, [onComplete, reduced]);
 
-  if (reduced) {
-    return (
-      <motion.div
-        className="fixed inset-0 z-50 bg-black"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-      />
-    );
-  }
+  // reduced motion check removed to ensure the dive animation plays for all users,
+  // even if their phone is in battery saver mode.
 
   return (
     <div className="fixed inset-0 z-50 bg-black overflow-hidden">
