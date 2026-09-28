@@ -12,20 +12,20 @@ export default function UniverseSelf({ onSwitch, isActive }) {
   const [stage, setStage] = useState('DOOR'); // 'DOOR' -> 'PLUNGE' -> 'HOBBIES' -> 'QUIZ' -> 'CTA'
 
   return (
-    <div className="absolute inset-0 w-full h-full bg-void overflow-hidden">
+    <div className="absolute inset-0 w-full h-full bg-red-500 overflow-hidden">
       
       <AnimatePresence mode="wait">
         
         {/* Écran 1 : La porte d'entrée Biométrique (Scanner) */}
         {stage === 'DOOR' && (
-          <motion.div key="door" exit={{ opacity: 0 }} transition={{ duration: 1.5 }} className="w-full h-full">
+          <motion.div key="door" initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1.5 }} className="w-full h-full">
             <BiometricDoor isActive={isActive} onUnlock={() => setStage('PLUNGE')} />
           </motion.div>
         )}
 
         {/* Écran 2 : La Transition Spectaculaire */}
         {stage === 'PLUNGE' && (
-          <motion.div key="plunge" className="w-full h-full">
+          <motion.div key="plunge" initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full">
             <QuantumPlunge onComplete={() => setStage('HOBBIES')} />
           </motion.div>
         )}

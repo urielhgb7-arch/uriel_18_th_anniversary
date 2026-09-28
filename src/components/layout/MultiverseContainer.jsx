@@ -52,7 +52,7 @@ export default function MultiverseContainer({ activeApp, isSwitcherOpen, setIsSw
           return (
             <motion.div
               key={id}
-              layout
+              
               onClick={() => isSwitcherOpen && handleSelect(id)}
               className={`
                 shrink-0 relative overflow-hidden transition-all origin-center
@@ -63,12 +63,12 @@ export default function MultiverseContainer({ activeApp, isSwitcherOpen, setIsSw
               `}
               initial={false}
               animate={{
-                opacity: isVisible ? 1 : 0,
+                opacity: 1,
                 pointerEvents: isSwitcherOpen || isActive ? 'auto' : 'none',
                 scale: isSwitcherOpen ? 1 : (isActive ? 1 : 0.95),
               }}
               style={{
-                visibility: isVisible ? 'visible' : 'hidden',
+                visibility: 'visible',
                 zIndex: isActive && !isSwitcherOpen ? 10 : 1
               }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
