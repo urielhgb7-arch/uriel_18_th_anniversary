@@ -12,7 +12,7 @@ export default function UniverseSelf({ onSwitch, isActive }) {
   const [stage, setStage] = useState('DOOR'); // 'DOOR' -> 'PLUNGE' -> 'HOBBIES' -> 'QUIZ' -> 'CTA'
 
   return (
-    <div className="absolute inset-0 w-full h-full bg-red-500 overflow-hidden">
+    <div className="absolute inset-0 w-full h-full bg-void overflow-hidden">
       
       <AnimatePresence mode="wait">
         

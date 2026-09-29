@@ -70,6 +70,9 @@ export function setMuted(next) {
     master.gain.cancelScheduledValues(ctx.currentTime);
     master.gain.setTargetAtTime(next ? 0 : 1, ctx.currentTime, 0.02);
   }
+  if (next && playlistAudio && !playlistAudio.paused) {
+    playlistAudio.pause();
+  }
 }
 
 /** True si on peut réellement produire du son maintenant. */
@@ -335,7 +338,7 @@ let immersiveAudio = null;
 /** Musique d'ambiance sobre et immersive avec le dernier fichier téléchargé */
 export function startImmersiveMusic() {
   if (muted || immersiveAudio) return;
-  
+
   immersiveAudio = new Audio('/audio/bg_music.mp3');
   immersiveAudio.loop = true;
   immersiveAudio.volume = 0.5; // Ajuste le volume selon le besoin
@@ -351,10 +354,95 @@ export function stopImmersiveMusic() {
   }
 }
 
+// ── Lecteur playlist (Dynamic Island) ───────────────────────────────────────
+//
+// Distinct de startImmersiveMusic() : ici l'invité contrôle explicitement
+// play/pause/piste. Un seul <audio> partagé pour toute la session, pour que
+// la lecture survive à l'ouverture/fermeture de l'île.
+
+export const PLAYLIST = [
+  { title: 'Piste 1', artist: 'À définir', src: '/audio/playlist/track-1.mp3' },
+  { title: 'Piste 2', artist: 'À définir', src: '/audio/playlist/track-2.mp3' },
+  { title: 'Piste 3', artist: 'À définir', src: '/audio/playlist/track-3.mp3' },
+];
+
+let playlistAudio = null;
+let playlistIndex = 0;
+const playlistListeners = new Set();
+
+function emitPlaylistState() {
+  const state = getPlaylistState();
+  playlistListeners.forEach((fn) => fn(state));
+}
+
+function ensurePlaylistAudio() {
+  if (playlistAudio) return playlistAudio;
+  playlistAudio = new Audio();
+  playlistAudio.volume = 0.6;
+  playlistAudio.addEventListener('play', emitPlaylistState);
+  playlistAudio.addEventListener('pause', emitPlaylistState);
+  playlistAudio.addEventListener('timeupdate', emitPlaylistState);
+  playlistAudio.addEventListener('loadedmetadata', emitPlaylistState);
+  playlistAudio.addEventListener('ended', playlistNext);
+  return playlistAudio;
+}
+
+function loadPlaylistTrack(index, autoplay) {
+  const audio = ensurePlaylistAudio();
+  playlistIndex = (index + PLAYLIST.length) % PLAYLIST.length;
+  audio.src = PLAYLIST[playlistIndex].src;
+  if (autoplay && !muted) {
+    audio.play().catch(() => {
+      /* piste manquante ou lecture bloquée : l'UI retombe en pause */
+      emitPlaylistState();
+    });
+  }
+  emitPlaylistState();
+}
+
+export function getPlaylistState() {
+  const audio = playlistAudio;
+  return {
+    track: PLAYLIST[playlistIndex],
+    index: playlistIndex,
+    isPlaying: !!audio && !audio.paused,
+    currentTime: audio?.currentTime ?? 0,
+    duration: audio?.duration || 0,
+  };
+}
+
+export function subscribePlaylist(fn) {
+  playlistListeners.add(fn);
+  fn(getPlaylistState());
+  return () => playlistListeners.delete(fn);
+}
+
+export function playlistToggle() {
+  const audio = ensurePlaylistAudio();
+  if (!audio.src) {
+    loadPlaylistTrack(playlistIndex, true);
+    return;
+  }
+  if (audio.paused) {
+    audio.play().catch(() => emitPlaylistState());
+  } else {
+    audio.pause();
+  }
+}
+
+export function playlistNext() {
+  loadPlaylistTrack(playlistIndex + 1, true);
+}
+
+export function playlistPrev() {
+  loadPlaylistTrack(playlistIndex - 1, true);
+}
+
 /** Coupe tout son persistant (démontage, navigation). */
 export function stopAll() {
   voices.forEach((stop) => stop());
   voices.clear();
+  playlistAudio?.pause();
 }
 
 // ── Haptique ─────────────────────────────────────────────────────────────────
